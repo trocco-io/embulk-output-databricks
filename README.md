@@ -1,6 +1,6 @@
 # Databricks output plugin for Embulk
 
-Databricks output plugin for Embulk loads records to Snowflake.
+Databricks output plugin for Embulk loads records to Databricks Delta Table.
 
 ## Overview
 
@@ -10,9 +10,10 @@ Databricks output plugin for Embulk loads records to Snowflake.
 
 ## Configuration
 
-- **server_hostname**: databaricks server_hostname (https://docs.databricks.com/en/integrations/jdbc/authentication.html#authentication-pat)
-- **http_path**: databaricks http_path (https://docs.databricks.com/en/integrations/jdbc/authentication.html#authentication-pat)
-- **personal_access_token**: databaricks personal_access_token (https://docs.databricks.com/en/integrations/jdbc/authentication.html#authentication-pat)
+- **driver_path**: path to the jar file of the JDBC driver. If not set, [the bundled JDBC driver](https://docs.databricks.com/en/integrations/jdbc/index.html) will be used. (string)
+- **server_hostname**: The Databricks compute resource’s Server Hostname value, see [Compute settings for the Databricks JDBC Driver](https://docs.databricks.com/en/integrations/jdbc/compute.html). (string, required)
+- **http_path**: The Databricks compute resource’s HTTP Path value, see [Compute settings for the Databricks JDBC Driver](https://docs.databricks.com/en/integrations/jdbc/compute.html). (string, required)
+- **personal_access_token**: The Databaricks personal_access_token, see [Authentication settings for the Databricks JDBC Driver](https://docs.databricks.com/en/integrations/jdbc/authentication.html#authentication-pat). (string, required)
 - **catalog_name**: destination catalog name (string, required)
 - **schema_name**: destination schema name (string, required)
 - **delete_stage**: whether to delete a temporarily created managed volume after running embulk. (boolean, default: false)

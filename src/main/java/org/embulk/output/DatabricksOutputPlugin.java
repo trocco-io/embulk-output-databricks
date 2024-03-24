@@ -73,6 +73,7 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
 
   @Override
   protected JdbcOutputConnector getConnector(PluginTask task, boolean retryableMetadataOperation) {
+    // https://docs.databricks.com/en/integrations/jdbc/index.html
     // https://docs.databricks.com/en/integrations/jdbc/authentication.html
     // https://docs.databricks.com/en/integrations/jdbc/compute.html
     DatabricksPluginTask t = (DatabricksPluginTask) task;
