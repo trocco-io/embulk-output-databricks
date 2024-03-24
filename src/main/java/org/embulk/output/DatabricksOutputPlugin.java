@@ -138,7 +138,7 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     Properties maskedProps = new Properties();
     for (Object keyObj : props.keySet()) {
       String key = (String) keyObj;
-      String maskedVal = key.equals("personal_access_token") ? "***" : props.getProperty(key);
+      String maskedVal = key.equals("PWD") ? "***" : props.getProperty(key);
       maskedProps.setProperty(key, maskedVal);
     }
     super.logConnectionProperties(url, maskedProps);
