@@ -17,7 +17,8 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
 
   @Override
   protected void setSearchPath(String schema) throws SQLException {
-    // There is nothing to do here as the schema needs to be configured after the catalogue has been set up.
+    // There is nothing to do here as the schema needs to be configured after the catalogue has been
+    // set up.
     // Also, the command to set the schema is unique to Databricks.
   }
 
@@ -54,7 +55,8 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
   public boolean isAvailableTableMetadataInConnection(ResultSet rs, TableIdentifier tableIdentifier)
       throws SQLException {
     // If unchecked, tables in other catalogs may appear to exist.
-    // This is because the base embulk jdbc plugin's tableIdentifier.getDatabase() is often returns null
+    // This is because the base embulk jdbc plugin's tableIdentifier.getDatabase() is often returns
+    // null
     // and one Databricks connection has multiple catalogs　(databases) available.
 
     if (tableIdentifier.getDatabase() == null) {

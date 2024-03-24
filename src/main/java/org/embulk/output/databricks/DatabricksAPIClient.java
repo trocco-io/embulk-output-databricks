@@ -20,12 +20,12 @@ public class DatabricksAPIClient {
     workspaceClient = new WorkspaceClient(config);
   }
 
-  public void createStagingVolume(String catalogName, String schemaName, String volumeName) {
+  public void createVolume(String catalogName, String schemaName, String volumeName) {
     // https://docs.databricks.com/api/workspace/volumes/create
     workspaceClient.volumes().create(catalogName, schemaName, volumeName, VolumeType.MANAGED);
   }
 
-  public void deleteStagingVolume(String catalogName, String schemaName, String volumeName) {
+  public void deleteVolume(String catalogName, String schemaName, String volumeName) {
     // https://docs.databricks.com/api/workspace/volumes/delete
     String name = String.format("%s.%s.%s", catalogName, schemaName, volumeName);
     workspaceClient.volumes().delete(name);
@@ -56,17 +56,18 @@ public class DatabricksAPIClient {
   private static String currentTransactionVolumeName = null;
 
   public static String fetchCurrentTransactionVolumeName() {
-    if(currentTransactionVolumeName == null) {
-        currentTransactionVolumeName = createRandomName();
+    if (currentTransactionVolumeName == null) {
+      currentTransactionVolumeName = createRandomUnityCatalogObjectName();
     }
     return currentTransactionVolumeName;
   }
 
-  public static String createRandomName() {
-    // https://docs.databricks.com/ja/sql/language-manual/sql-ref-identifiers.html
+  public static String createRandomUnityCatalogObjectName() {
+    // https://docs.databricks.com/en/sql/language-manual/sql-ref-names.html
+    // https://docs.databricks.com/en/sql/language-manual/sql-ref-identifiers.html
     Date now = new Date();
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-    String randomSuffix = UUID.randomUUID().toString().replace( "-" , "" );
-    return dateFormat.format(now) + "_" + randomSuffix;
+    String randomSuffix = UUID.randomUUID().toString().replace("-", "");
+    return dateFormat.format(now) + "TEST_" + randomSuffix;
   }
 }

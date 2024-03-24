@@ -100,14 +100,14 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     String volumeName = DatabricksAPIClient.fetchCurrentTransactionVolumeName();
     ConfigDiff configDiff;
     try {
-      apiClient.createStagingVolume(t.getCatalogName(), t.getSchemaName(), volumeName);
+      apiClient.createVolume(t.getCatalogName(), t.getSchemaName(), volumeName);
       configDiff = super.transaction(config, schema, taskCount, control);
       if (t.getDeleteStage()) {
-        apiClient.deleteStagingVolume(t.getCatalogName(), t.getSchemaName(), volumeName);
+        apiClient.deleteVolume(t.getCatalogName(), t.getSchemaName(), volumeName);
       }
     } catch (Exception e) {
       if (t.getDeleteStage() && t.getDeleteStageOnError()) {
-        apiClient.deleteStagingVolume(t.getCatalogName(), t.getSchemaName(), volumeName);
+        apiClient.deleteVolume(t.getCatalogName(), t.getSchemaName(), volumeName);
       }
       throw new RuntimeException(e);
     }
@@ -159,7 +159,8 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     final HashSet<String> primaryKeysBuilder = new HashSet<>();
     try {
       while (rs.next()) {
-        if (!((DatabricksOutputConnection) connection).isAvailableTableMetadataInConnection(rs, table)) {
+        if (!((DatabricksOutputConnection) connection)
+            .isAvailableTableMetadataInConnection(rs, table)) {
           continue;
         }
         primaryKeysBuilder.add(rs.getString("COLUMN_NAME"));
@@ -178,7 +179,8 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
             null);
     try {
       while (rs.next()) {
-        if (!((DatabricksOutputConnection) connection).isAvailableTableMetadataInConnection(rs, table)) {
+        if (!((DatabricksOutputConnection) connection)
+            .isAvailableTableMetadataInConnection(rs, table)) {
           continue;
         }
         String columnName = rs.getString("COLUMN_NAME");

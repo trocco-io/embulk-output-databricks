@@ -81,7 +81,10 @@ public class DatabricksCopyBatchInsert extends AbstractPostgreSQLCopyBatchInsert
     if (batchRows > 0) {
       String uploadFilePath =
           DatabricksAPIClient.createFilePath(
-              catalogName, schemaName, volumeName, DatabricksAPIClient.createRandomName());
+              catalogName,
+              schemaName,
+              volumeName,
+              DatabricksAPIClient.createRandomUnityCatalogObjectName());
 
       UploadTask uploadTask = new UploadTask(uploadFilePath, batchRows, file);
       Future<Void> uploadFuture = executorService.submit(uploadTask);
