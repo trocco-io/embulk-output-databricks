@@ -57,7 +57,7 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
     // If unchecked, tables in other catalogs may appear to exist.
     // This is because the base embulk jdbc plugin's tableIdentifier.getDatabase() is often returns
     // null
-    // and one Databricks connection has multiple catalogs　(databases) available.
+    // and one Databricks connection has multiple available catalogs　(databases).
 
     if (tableIdentifier.getDatabase() == null) {
       logger.trace("tableIdentifier.getDatabase() == null, check by instance variable");
