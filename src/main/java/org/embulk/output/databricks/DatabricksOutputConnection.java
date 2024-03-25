@@ -275,13 +275,14 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
 
   @Override
   protected String buildColumnTypeName(JdbcColumn c) {
-    if (c.getSimpleTypeName().equals("CLOB")) {
-      return "STRING";
+    switch (c.getSimpleTypeName()) {
+      case "CLOB":
+        return "STRING";
+      case "DOUBLE PRECISION":
+        return "DOUBLE";
+      default:
+        return super.buildColumnTypeName(c);
     }
-    if (c.getSimpleTypeName().equals("DOUBLE PRECISION")) {
-      return "DOUBLE";
-    }
-    return super.buildColumnTypeName(c);
   }
 
   private String buildColumns(JdbcSchema schema, String prefix) {
