@@ -166,7 +166,7 @@ public class DatabricksCopyBatchInsert extends AbstractPostgreSQLCopyBatchInsert
         try (DatabricksOutputConnection con =
             (DatabricksOutputConnection) connector.connect(true)) {
           long startTime = System.currentTimeMillis();
-          con.runCopy(tableIdentifier, filePath, targetTableSchema, delimiterString);
+          con.runCopy(tableIdentifier, filePath, targetTableSchema);
           double seconds = (System.currentTimeMillis() - startTime) / 1000.0;
           logger.info(String.format("Loaded file %s (%.2f seconds for COPY)", filePath, seconds));
           if (deleteStage) {

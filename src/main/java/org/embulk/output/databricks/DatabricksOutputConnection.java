@@ -116,10 +116,10 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
   }
 
   public void runCopy(
-      TableIdentifier table, String filePath, JdbcSchema jdbcSchema, String delimiterString)
+      TableIdentifier table, String filePath, JdbcSchema jdbcSchema)
       throws SQLException {
     try (Statement stmt = connection.createStatement()) {
-      String sql = buildCopySQL(table, filePath, jdbcSchema, delimiterString);
+      String sql = buildCopySQL(table, filePath, jdbcSchema);
       executeUpdate(stmt, sql);
       commitIfNecessary(connection);
     }
@@ -128,7 +128,7 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
   // https://docs.databricks.com/en/ingestion/copy-into/examples.html#load-csv-files-with-copy-into
   // https://docs.databricks.com/en/sql/language-manual/delta-copy-into.html
   private String buildCopySQL(
-      TableIdentifier table, String filePath, JdbcSchema jdbcSchema, String delimiterString) {
+      TableIdentifier table, String filePath, JdbcSchema jdbcSchema) {
     StringBuilder sb = new StringBuilder();
     sb.append("COPY INTO ");
     quoteTableIdentifier(sb, table);
@@ -149,9 +149,8 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
     sb.append(" )");
     sb.append(" FILEFORMAT = CSV ");
     sb.append(" FORMAT_OPTIONS (");
-    sb.append(" 'delimiter' = '");
-    sb.append(delimiterString);
-    sb.append("'");
+    sb.append(" 'nullValue' = '\\\\N' , ");
+    sb.append(" 'delimiter' = '\\t' ");
     sb.append(")");
     return sb.toString();
   }
