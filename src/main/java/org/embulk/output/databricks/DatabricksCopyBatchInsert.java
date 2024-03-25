@@ -15,7 +15,6 @@ import org.slf4j.Logger;
 
 public class DatabricksCopyBatchInsert extends AbstractPostgreSQLCopyBatchInsert {
   private final Logger logger = org.slf4j.LoggerFactory.getLogger(getClass());
-
   private TableIdentifier tableIdentifier = null;
   private final ExecutorService executorService;
   private final JdbcOutputConnector connector;

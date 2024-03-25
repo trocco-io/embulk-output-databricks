@@ -39,8 +39,8 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
     }
   }
 
-  // TODO This is almost copy from JdbcOutputConnection excepting validation of table exists in
-  // current schema
+  // This is almost copy from JdbcOutputConnection excepting validation of table exists in current
+  // schema
   public boolean tableExists(TableIdentifier table) throws SQLException {
     try (ResultSet rs =
         connection
