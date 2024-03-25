@@ -41,7 +41,6 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
 
   // TODO This is almost copy from JdbcOutputConnection excepting validation of table exists in
   // current schema
-
   public boolean tableExists(TableIdentifier table) throws SQLException {
     try (ResultSet rs =
         connection
@@ -157,26 +156,59 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
     return sb.toString();
   }
 
+  // This is almost a copy of JdbcOutputConnection except for aggregating fromTables to first from
+  // table,
+  // because Databricks MERGE INTO source can only specify a single table.
+  @Override
+  protected void collectMerge(
+      List<TableIdentifier> fromTables,
+      JdbcSchema schema,
+      TableIdentifier toTable,
+      MergeConfig mergeConfig,
+      Optional<String> preSql,
+      Optional<String> postSql)
+      throws SQLException {
+    if (fromTables.isEmpty()) {
+      return;
+    }
+
+    Statement stmt = connection.createStatement();
+    try {
+      if (preSql.isPresent()) {
+        execute(stmt, preSql.get());
+      }
+
+      TableIdentifier aggregateToTable = fromTables.get(0);
+      List<TableIdentifier> aggregateFromTables =
+          fromTables.stream().skip(1).collect(Collectors.toList());
+      if (!aggregateFromTables.isEmpty()) {
+        String aggregateSQL = buildAggregateSQL(aggregateFromTables, aggregateToTable);
+        executeUpdate(stmt, aggregateSQL);
+      }
+
+      String sql = buildCollectMergeSql(aggregateToTable, schema, toTable, mergeConfig);
+      executeUpdate(stmt, sql);
+
+      if (postSql.isPresent()) {
+        execute(stmt, postSql.get());
+      }
+
+      commitIfNecessary(connection);
+    } catch (SQLException ex) {
+      throw safeRollback(connection, ex);
+    } finally {
+      stmt.close();
+    }
+  }
+
   // https://github.com/embulk/embulk-output-jdbc/blob/242db4daf397fb8bfd286f5e61f8da67b51d7b31/embulk-output-redshift/src/main/java/org/embulk/output/redshift/RedshiftOutputConnection.java
   // https://docs.databricks.com/en/sql/language-manual/delta-merge-into.html
-  @Override
   protected String buildCollectMergeSql(
-      List<TableIdentifier> fromTables,
+      TableIdentifier aggregateToTable,
       JdbcSchema schema,
       TableIdentifier toTable,
       MergeConfig mergeConfig)
       throws SQLException {
-
-    TableIdentifier aggregateToTable = fromTables.get(0);
-    List<TableIdentifier> aggregateFromTables =
-        fromTables.stream().skip(1).collect(Collectors.toList());
-    if (!aggregateFromTables.isEmpty()) {
-      String aggregateSQL = buildAggregateSQL(aggregateFromTables, aggregateToTable);
-      try (Statement stmt = connection.createStatement()) {
-        executeUpdate(stmt, aggregateSQL);
-      }
-    }
-
     StringBuilder sb = new StringBuilder();
     sb.append(" MERGE INTO ");
     quoteTableIdentifier(sb, toTable);
