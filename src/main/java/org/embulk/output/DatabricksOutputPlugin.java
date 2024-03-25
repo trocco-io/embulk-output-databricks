@@ -144,6 +144,7 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     super.logConnectionProperties(url, maskedProps);
   }
 
+  // TODO This is almost copy from AbstractJdbcOutputPlugin excepting validation of table exists in current schema
   public Optional<JdbcSchema> newJdbcSchemaFromTableIfExists(
       JdbcOutputConnection connection, TableIdentifier table) throws SQLException {
     if (!connection.tableExists(table)) {

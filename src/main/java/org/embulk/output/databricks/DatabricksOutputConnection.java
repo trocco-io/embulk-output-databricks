@@ -38,6 +38,8 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
     }
   }
 
+  // TODO This is almost copy from JdbcOutputConnection excepting validation of table exists in current schema
+
   public boolean tableExists(TableIdentifier table) throws SQLException {
     try (ResultSet rs =
         connection
@@ -94,7 +96,7 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
       throws SQLException {
     if (connection.getAutoCommit() != autoCommit) {
       logger.trace(
-          "Databricks cannot change autocommit state. (current {})", connection.getAutoCommit());
+          "Databricks cannot change autocommit state. (newValue {} current {})", autoCommit, connection.getAutoCommit());
     }
 
     if (transactionIsolation.isPresent()) {
