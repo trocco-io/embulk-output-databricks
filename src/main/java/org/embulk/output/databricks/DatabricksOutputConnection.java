@@ -2,6 +2,7 @@ package org.embulk.output.databricks;
 
 import java.sql.*;
 import java.util.*;
+import java.util.stream.Collectors;
 import org.embulk.output.jdbc.*;
 
 public class DatabricksOutputConnection extends JdbcOutputConnection {
@@ -156,6 +157,90 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
     return sb.toString();
   }
 
+  // https://github.com/embulk/embulk-output-jdbc/blob/242db4daf397fb8bfd286f5e61f8da67b51d7b31/embulk-output-redshift/src/main/java/org/embulk/output/redshift/RedshiftOutputConnection.java
+  // https://docs.databricks.com/en/sql/language-manual/delta-merge-into.html
+  @Override
+  protected String buildCollectMergeSql(
+      List<TableIdentifier> fromTables,
+      JdbcSchema schema,
+      TableIdentifier toTable,
+      MergeConfig mergeConfig)
+      throws SQLException {
+
+    TableIdentifier aggregateToTable = fromTables.get(0);
+    List<TableIdentifier> aggregateFromTables =
+        fromTables.stream().skip(1).collect(Collectors.toList());
+    if (!aggregateFromTables.isEmpty()) {
+      String aggregateSQL = buildAggregateSQL(aggregateFromTables, aggregateToTable);
+      try (Statement stmt = connection.createStatement()) {
+        executeUpdate(stmt, aggregateSQL);
+      }
+    }
+
+    StringBuilder sb = new StringBuilder();
+    sb.append(" MERGE INTO ");
+    quoteTableIdentifier(sb, toTable);
+    sb.append(" T ");
+    sb.append(" USING ");
+    quoteTableIdentifier(sb, aggregateToTable);
+    sb.append(" S ");
+    sb.append(" ON (");
+    for (int i = 0; i < mergeConfig.getMergeKeys().size(); i++) {
+      if (i != 0) {
+        sb.append(" AND ");
+      }
+      String mergeKey = quoteIdentifierString(mergeConfig.getMergeKeys().get(i));
+      sb.append("T.");
+      sb.append(mergeKey);
+      sb.append(" = S.");
+      sb.append(mergeKey);
+    }
+    sb.append(")");
+    sb.append(" WHEN MATCHED THEN ");
+    sb.append(" UPDATE SET ");
+    if (mergeConfig.getMergeRule().isPresent()) {
+      for (int i = 0; i < mergeConfig.getMergeRule().get().size(); i++) {
+        if (i != 0) {
+          sb.append(", ");
+        }
+        sb.append(mergeConfig.getMergeRule().get().get(i));
+      }
+    } else {
+      for (int i = 0; i < schema.getCount(); i++) {
+        if (i != 0) {
+          sb.append(", ");
+        }
+        String column = quoteIdentifierString(schema.getColumnName(i));
+        sb.append(column);
+        sb.append(" = S.");
+        sb.append(column);
+      }
+    }
+    sb.append(" WHEN NOT MATCHED THEN");
+    sb.append(" INSERT (");
+    sb.append(buildColumns(schema, ""));
+    sb.append(") VALUES (");
+    sb.append(buildColumns(schema, "S."));
+    sb.append(");");
+    return sb.toString();
+  }
+
+  private String buildAggregateSQL(List<TableIdentifier> fromTables, TableIdentifier toTable) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("INSERT INTO ");
+    quoteTableIdentifier(sb, toTable);
+    sb.append(" ( ");
+    for (int i = 0; i < fromTables.size(); i++) {
+      if (i != 0) {
+        sb.append(" UNION ALL ");
+      }
+      sb.append("SELECT * FROM ");
+      quoteTableIdentifier(sb, fromTables.get(i));
+    }
+    sb.append(" ); ");
+    return sb.toString();
+  }
+
   @Override
   protected String buildColumnTypeName(JdbcColumn c) {
     if (c.getSimpleTypeName().equals("CLOB")) {
@@ -165,5 +250,17 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
       return "DOUBLE";
     }
     return super.buildColumnTypeName(c);
+  }
+
+  private String buildColumns(JdbcSchema schema, String prefix) {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < schema.getCount(); i++) {
+      if (i != 0) {
+        sb.append(", ");
+      }
+      sb.append(prefix);
+      sb.append(quoteIdentifierString(schema.getColumnName(i)));
+    }
+    return sb.toString();
   }
 }
