@@ -156,7 +156,10 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
   @Override
   protected String buildColumnTypeName(JdbcColumn c) {
     if (c.getSimpleTypeName().equals("CLOB")) {
-      return "VARCHAR(65535)";
+      return "STRING";
+    }
+    if (c.getSimpleTypeName().equals("DOUBLE PRECISION")) {
+      return "DOUBLE";
     }
     return super.buildColumnTypeName(c);
   }
