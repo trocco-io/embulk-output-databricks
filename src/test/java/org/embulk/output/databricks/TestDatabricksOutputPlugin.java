@@ -28,11 +28,17 @@ public class TestDatabricksOutputPlugin {
 
   @Before
   public void setup() {
+    if (ConfigUtil.disableOnlineTest()) {
+      return;
+    }
     ConnectionUtil.dropAllTemporaryTables();
   }
 
   @After
   public void cleanup() {
+    if (ConfigUtil.disableOnlineTest()) {
+      return;
+    }
     ConnectionUtil.dropAllTemporaryTables();
   }
 

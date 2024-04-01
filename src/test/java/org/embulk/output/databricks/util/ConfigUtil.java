@@ -1,5 +1,7 @@
 package org.embulk.output.databricks.util;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+
 import org.embulk.config.ConfigSource;
 import org.embulk.output.DatabricksOutputPlugin;
 import org.embulk.output.jdbc.AbstractJdbcOutputPlugin;
@@ -18,8 +20,14 @@ public class ConfigUtil {
           .build();
   private static final ConfigMapper CONFIG_MAPPER = CONFIG_MAPPER_FACTORY.createConfigMapper();
 
+  private static final String configEnvName = "EMBULK_OUTPUT_DATABRICKS_TEST_CONFIG";
+
+  public static Boolean disableOnlineTest() {
+    return isNullOrEmpty(System.getenv(configEnvName));
+  }
+
   public static ConfigSource baseConfigSource() {
-    return EmbulkTests.config("EMBULK_OUTPUT_DATABRICKS_TEST_CONFIG");
+    return EmbulkTests.config(configEnvName);
   }
 
   public interface TestTask extends Task {
