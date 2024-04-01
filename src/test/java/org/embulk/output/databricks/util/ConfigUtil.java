@@ -2,6 +2,8 @@ package org.embulk.output.databricks.util;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
+import java.util.List;
+import java.util.Optional;
 import org.embulk.config.ConfigSource;
 import org.embulk.output.DatabricksOutputPlugin;
 import org.embulk.output.jdbc.AbstractJdbcOutputPlugin;
@@ -55,6 +57,11 @@ public class ConfigUtil {
   }
 
   public static ConfigSource createPluginConfigSource(AbstractJdbcOutputPlugin.Mode mode) {
+    return createPluginConfigSource(mode, Optional.empty());
+  }
+
+  public static ConfigSource createPluginConfigSource(
+      AbstractJdbcOutputPlugin.Mode mode, Optional<List<String>> mergeKeys) {
     final TestTask t = createTestTask();
     return CONFIG_MAPPER_FACTORY
         .newConfigSource()
@@ -66,6 +73,7 @@ public class ConfigUtil {
         .set("schema_name", t.getSchemaName())
         .set("mode", mode)
         .set("delete_stage_on_error", true)
+        .set("merge_keys", mergeKeys)
         .set("delete_stage", true)
         .set("table", t.getTablePrefix() + "_dst");
   }
