@@ -26,12 +26,6 @@ public class ConnectionUtil {
         testTask.getServerHostname(), testTask.getHTTPPath(), testTask.getPersonalAccessToken());
   }
 
-  public static List<Map<String, Object>> fetchDstTableData(ConfigSource configSource) {
-    DatabricksOutputPlugin.DatabricksPluginTask t = ConfigUtil.createPluginTask(configSource);
-    String sql = String.format("SELECT * FROM %s", quotedDstTableName(configSource));
-    return ConnectionUtil.runQuery(sql);
-  }
-
   public static String quotedDstTableName(ConfigSource configSource) {
     DatabricksOutputPlugin.DatabricksPluginTask t = ConfigUtil.createPluginTask(configSource);
     return String.format("`%s`.`%s`.`%s`", t.getCatalogName(), t.getSchemaName(), t.getTable());

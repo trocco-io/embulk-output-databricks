@@ -20,6 +20,11 @@ import org.embulk.test.TestingEmbulk;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
+import static org.embulk.output.databricks.util.ConfigUtil.createPluginConfigSource;
+import static org.embulk.output.databricks.util.ConnectionUtil.quotedDstTableName;
+import static org.embulk.output.databricks.util.ConnectionUtil.runQuery;
+import static org.embulk.output.databricks.util.EmbulkIOUtil.createInputFile;
+
 public class TestDatabricksOutputPlugin {
   private static final EmbulkSystemProperties EMBULK_SYSTEM_PROPERTIES =
       EmbulkSystemProperties.of(new Properties());
@@ -54,10 +59,14 @@ public class TestDatabricksOutputPlugin {
   @Test
   public void testInsertAsNewTable() throws Exception {
     ConfigSource configSource =
-        ConfigUtil.createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT);
-    File inputFile = EmbulkIOUtil.createInputFile(testFolder, "_c0:string", "test1", "test2");
+            createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT);
+    String quotedDstTableName = quotedDstTableName(configSource);
+
+    File inputFile = createInputFile(testFolder, "_c0:string", "test1", "test2");
     embulk.runOutput(configSource, inputFile.toPath());
-    List<Map<String, Object>> results = ConnectionUtil.fetchDstTableData(configSource);
+
+    String sql = String.format("SELECT * FROM %s ORDER BY _c0", quotedDstTableName);
+    List<Map<String, Object>> results = runQuery(sql);
     Assert.assertEquals(2, results.size());
     Assert.assertEquals("test1", results.get(0).get("_c0"));
     Assert.assertEquals("test2", results.get(1).get("_c0"));
@@ -66,17 +75,19 @@ public class TestDatabricksOutputPlugin {
   @Test
   public void testInsertToExistTable() throws Exception {
     ConfigSource configSource =
-        ConfigUtil.createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT);
-    String tableName = ConnectionUtil.quotedDstTableName(configSource);
-    String createTableSQL = String.format("CREATE TABLE %s (_c0 string)", tableName);
+        createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT);
+    String quotedDstTableName = quotedDstTableName(configSource);
+    String createTableSQL = String.format("CREATE TABLE %s (_c0 string)", quotedDstTableName);
     ConnectionUtil.run(createTableSQL);
 
-    String insertTableSQL = String.format("INSERT INTO %s VALUES ('test0')", tableName);
+    String insertTableSQL = String.format("INSERT INTO %s VALUES ('test0')", quotedDstTableName);
     ConnectionUtil.run(insertTableSQL);
 
-    File inputFile = EmbulkIOUtil.createInputFile(testFolder, "_c0:string", "test1", "test2");
+    File inputFile = createInputFile(testFolder, "_c0:string", "test1", "test2");
     embulk.runOutput(configSource, inputFile.toPath());
-    List<Map<String, Object>> results = ConnectionUtil.fetchDstTableData(configSource);
+
+    String sql = String.format("SELECT * FROM %s ORDER BY _c0", quotedDstTableName);
+    List<Map<String, Object>> results = runQuery(sql);
     Assert.assertEquals(3, results.size());
     Assert.assertEquals("test0", results.get(0).get("_c0"));
     Assert.assertEquals("test1", results.get(1).get("_c0"));
