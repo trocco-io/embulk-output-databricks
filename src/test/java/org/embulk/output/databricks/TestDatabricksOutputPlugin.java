@@ -1,5 +1,10 @@
 package org.embulk.output.databricks;
 
+import static org.embulk.output.databricks.util.ConfigUtil.createPluginConfigSource;
+import static org.embulk.output.databricks.util.ConnectionUtil.quotedDstTableName;
+import static org.embulk.output.databricks.util.ConnectionUtil.runQuery;
+import static org.embulk.output.databricks.util.EmbulkIOUtil.createInputFile;
+
 import java.io.File;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +15,6 @@ import org.embulk.input.file.LocalFileInputPlugin;
 import org.embulk.output.DatabricksOutputPlugin;
 import org.embulk.output.databricks.util.ConfigUtil;
 import org.embulk.output.databricks.util.ConnectionUtil;
-import org.embulk.output.databricks.util.EmbulkIOUtil;
 import org.embulk.output.jdbc.AbstractJdbcOutputPlugin;
 import org.embulk.parser.csv.CsvParserPlugin;
 import org.embulk.spi.FileInputPlugin;
@@ -19,11 +23,6 @@ import org.embulk.spi.ParserPlugin;
 import org.embulk.test.TestingEmbulk;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
-
-import static org.embulk.output.databricks.util.ConfigUtil.createPluginConfigSource;
-import static org.embulk.output.databricks.util.ConnectionUtil.quotedDstTableName;
-import static org.embulk.output.databricks.util.ConnectionUtil.runQuery;
-import static org.embulk.output.databricks.util.EmbulkIOUtil.createInputFile;
 
 public class TestDatabricksOutputPlugin {
   private static final EmbulkSystemProperties EMBULK_SYSTEM_PROPERTIES =
@@ -58,8 +57,7 @@ public class TestDatabricksOutputPlugin {
 
   @Test
   public void testInsertAsNewTable() throws Exception {
-    ConfigSource configSource =
-            createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT);
+    ConfigSource configSource = createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT);
     String quotedDstTableName = quotedDstTableName(configSource);
 
     File inputFile = createInputFile(testFolder, "_c0:string", "test1", "test2");
@@ -74,8 +72,7 @@ public class TestDatabricksOutputPlugin {
 
   @Test
   public void testInsertToExistTable() throws Exception {
-    ConfigSource configSource =
-        createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT);
+    ConfigSource configSource = createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT);
     String quotedDstTableName = quotedDstTableName(configSource);
     String createTableSQL = String.format("CREATE TABLE %s (_c0 string)", quotedDstTableName);
     ConnectionUtil.run(createTableSQL);
