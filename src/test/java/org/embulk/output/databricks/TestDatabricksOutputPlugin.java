@@ -28,12 +28,12 @@ public class TestDatabricksOutputPlugin {
 
   @Before
   public void setup() {
-//    ConnectionUtil.dropAllTemporaryTables();
+    ConnectionUtil.dropAllTemporaryTables();
   }
 
   @After
   public void cleanup() {
-  //  ConnectionUtil.dropAllTemporaryTables();
+    ConnectionUtil.dropAllTemporaryTables();
   }
 
   @Rule
@@ -46,16 +46,34 @@ public class TestDatabricksOutputPlugin {
           .build();
 
   @Test
-  public void testConfigDefault() throws Exception {
+  public void testInsertAsNewTable() throws Exception {
     ConfigSource configSource =
-        ConfigUtil.createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.REPLACE);
-    File inputFile = EmbulkIOUtil.createInputFile(testFolder, "_c0:string", "test", "test0");
+        ConfigUtil.createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT);
+    File inputFile = EmbulkIOUtil.createInputFile(testFolder, "_c0:string", "test1", "test2");
     embulk.runOutput(configSource, inputFile.toPath());
-    DatabricksOutputPlugin.DatabricksPluginTask t = ConfigUtil.createPluginTask(configSource);
-    List<Map<String, Object>> results =  ConnectionUtil.runQuery(
-        String.format("SELECT * FROM `%s`.`%s`.`%s`", t.getCatalogName(), t.getSchemaName(), t.getTable()));
+    List<Map<String, Object>> results = ConnectionUtil.fetchDstTableData(configSource);
     Assert.assertEquals(2, results.size());
-    Assert.assertEquals("test", results.get(0).get("_c0"));
-    Assert.assertEquals("test0", results.get(1).get("_c0"));
+    Assert.assertEquals("test1", results.get(0).get("_c0"));
+    Assert.assertEquals("test2", results.get(1).get("_c0"));
+  }
+
+  @Test
+  public void testInsertToExistTable() throws Exception {
+    ConfigSource configSource =
+        ConfigUtil.createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT);
+    String tableName = ConnectionUtil.quotedDstTableName(configSource);
+    String createTableSQL = String.format("CREATE TABLE %s (_c0 string)", tableName);
+    ConnectionUtil.run(createTableSQL);
+
+    String insertTableSQL = String.format("INSERT INTO %s VALUES ('test0')", tableName);
+    ConnectionUtil.run(insertTableSQL);
+
+    File inputFile = EmbulkIOUtil.createInputFile(testFolder, "_c0:string", "test1", "test2");
+    embulk.runOutput(configSource, inputFile.toPath());
+    List<Map<String, Object>> results = ConnectionUtil.fetchDstTableData(configSource);
+    Assert.assertEquals(3, results.size());
+    Assert.assertEquals("test0", results.get(0).get("_c0"));
+    Assert.assertEquals("test1", results.get(1).get("_c0"));
+    Assert.assertEquals("test2", results.get(2).get("_c0"));
   }
 }
