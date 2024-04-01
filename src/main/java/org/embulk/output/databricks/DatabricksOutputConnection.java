@@ -115,8 +115,7 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
     }
   }
 
-  public void runCopy(
-      TableIdentifier table, String filePath, JdbcSchema jdbcSchema)
+  public void runCopy(TableIdentifier table, String filePath, JdbcSchema jdbcSchema)
       throws SQLException {
     try (Statement stmt = connection.createStatement()) {
       String sql = buildCopySQL(table, filePath, jdbcSchema);
@@ -127,8 +126,7 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
 
   // https://docs.databricks.com/en/ingestion/copy-into/examples.html#load-csv-files-with-copy-into
   // https://docs.databricks.com/en/sql/language-manual/delta-copy-into.html
-  private String buildCopySQL(
-      TableIdentifier table, String filePath, JdbcSchema jdbcSchema) {
+  private String buildCopySQL(TableIdentifier table, String filePath, JdbcSchema jdbcSchema) {
     StringBuilder sb = new StringBuilder();
     sb.append("COPY INTO ");
     quoteTableIdentifier(sb, table);
