@@ -63,3 +63,7 @@ Databricks output plugin for Embulk loads records to Databricks Delta Table.
 ```
 $ ./gradlew gem  # -t to watch change of files and rebuild continuously
 ```
+
+## TEST
+
+$ EMBULK_OUTPUT_DATABRICKS_TEST_CONFIG="exxample/test.yml" ./gradlew test # Create exxample/test.yml based on example/test.yml.example

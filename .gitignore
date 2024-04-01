@@ -14,3 +14,4 @@ config.yml
 config.yaml
 default_jdbc_driver/
 /bin/
+example/test.yml

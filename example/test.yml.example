@@ -1,0 +1,6 @@
+server_hostname: 
+http_path: 
+personal_access_token: 
+catalog_name: 
+schema_name: 
+table_prefix: 
