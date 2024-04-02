@@ -101,7 +101,8 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
       ConfigSource config, Schema schema, int taskCount, Control control) {
     DatabricksPluginTask t = (DatabricksPluginTask) CONFIG_MAPPER.map(config, this.getTaskClass());
     DatabricksAPIClient apiClient = DatabricksAPIClient.create(t);
-    String volumeName = DatabricksAPIClient.fetchCurrentTransactionVolumeName(t.getStagingVolumeNamePrefix());
+    String volumeName =
+        DatabricksAPIClient.fetchCurrentTransactionVolumeName(t.getStagingVolumeNamePrefix());
     ConfigDiff configDiff;
     try {
       apiClient.createVolume(t.getCatalogName(), t.getSchemaName(), volumeName);
