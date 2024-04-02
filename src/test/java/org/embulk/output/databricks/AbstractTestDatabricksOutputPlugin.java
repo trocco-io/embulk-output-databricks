@@ -6,6 +6,7 @@ import org.embulk.input.file.LocalFileInputPlugin;
 import org.embulk.output.DatabricksOutputPlugin;
 import org.embulk.output.databricks.util.ConfigUtil;
 import org.embulk.output.databricks.util.ConnectionUtil;
+import org.embulk.output.databricks.util.DatabricksApiClientUtil;
 import org.embulk.parser.csv.CsvParserPlugin;
 import org.embulk.spi.FileInputPlugin;
 import org.embulk.spi.OutputPlugin;
@@ -28,6 +29,7 @@ public abstract class AbstractTestDatabricksOutputPlugin {
       return;
     }
     ConnectionUtil.dropAllTemporaryTables();
+    DatabricksApiClientUtil.deleteAllTemporaryStagingVolumes();
   }
 
   @After
@@ -36,6 +38,7 @@ public abstract class AbstractTestDatabricksOutputPlugin {
       return;
     }
     ConnectionUtil.dropAllTemporaryTables();
+    DatabricksApiClientUtil.deleteAllTemporaryStagingVolumes();
   }
 
   @Rule

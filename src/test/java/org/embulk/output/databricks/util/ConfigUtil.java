@@ -2,6 +2,7 @@ package org.embulk.output.databricks.util;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import org.embulk.config.ConfigSource;
@@ -50,6 +51,9 @@ public class ConfigUtil {
 
     @Config("table_prefix")
     public String getTablePrefix();
+
+    @Config("staging_volume_name_prefix")
+    public String getStagingVolumeNamePrefix();
   }
 
   public static TestTask createTestTask() {
@@ -63,6 +67,7 @@ public class ConfigUtil {
   public static ConfigSource createPluginConfigSource(
       AbstractJdbcOutputPlugin.Mode mode, Optional<List<String>> mergeKeys) {
     final TestTask t = createTestTask();
+
     return CONFIG_MAPPER_FACTORY
         .newConfigSource()
         .set("type", "databricks")
@@ -75,11 +80,45 @@ public class ConfigUtil {
         .set("delete_stage_on_error", true)
         .set("merge_keys", mergeKeys)
         .set("delete_stage", true)
+        .set("staging_volume_name_prefix", t.getStagingVolumeNamePrefix())
         .set("table", t.getTablePrefix() + "_dst");
   }
 
   public static DatabricksOutputPlugin.DatabricksPluginTask createPluginTask(
       ConfigSource configSource) {
     return CONFIG_MAPPER.map(configSource, DatabricksOutputPlugin.DatabricksPluginTask.class);
+  }
+
+  public static ConfigSource setColumnOption(
+      ConfigSource configSource, String columnName, String type) {
+    return setColumnOption(configSource, columnName, type, null, null, null);
+  }
+
+  public static ConfigSource setColumnOption(
+      ConfigSource configSource,
+      String columnName,
+      String type,
+      String valueType,
+      String timestampFormat,
+      ZoneId timeZone) {
+    ConfigSource columnOption = CONFIG_MAPPER_FACTORY.newConfigSource();
+    if (type != null) {
+      columnOption.set("type", type);
+    }
+    if (valueType != null) {
+      columnOption.set("value_type", valueType);
+    }
+    if (timestampFormat != null) {
+      columnOption.set("timestamp_format", timestampFormat);
+    }
+    if (timeZone != null) {
+      columnOption.set("time_zone", timeZone);
+    }
+    ConfigSource columnOptions =
+        configSource.get(
+            ConfigSource.class, "column_options", CONFIG_MAPPER_FACTORY.newConfigSource());
+    columnOptions.set(columnName, columnOption);
+    configSource.set("column_options", columnOptions);
+    return configSource;
   }
 }

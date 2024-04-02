@@ -17,7 +17,6 @@ public class EmbulkIOUtil {
         Stream.concat(
                 Stream.of(header + ",_hack_double:double"), Stream.of(data).map(s -> s + ",1.0"))
             .collect(Collectors.toList());
-    ;
     Files.write(in.toPath(), contents);
     return in;
   }
