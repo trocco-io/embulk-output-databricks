@@ -41,6 +41,10 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     @Config("schema_name")
     public String getSchemaName();
 
+    @Config("staging_volume_name_prefix")
+    @ConfigDefault("\"embulk_output_databricks_\"")
+    public String getStagingVolumeNamePrefix();
+
     @Config("delete_stage")
     @ConfigDefault("false")
     public boolean getDeleteStage();
@@ -97,7 +101,7 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
       ConfigSource config, Schema schema, int taskCount, Control control) {
     DatabricksPluginTask t = (DatabricksPluginTask) CONFIG_MAPPER.map(config, this.getTaskClass());
     DatabricksAPIClient apiClient = DatabricksAPIClient.create(t);
-    String volumeName = DatabricksAPIClient.fetchCurrentTransactionVolumeName();
+    String volumeName = DatabricksAPIClient.fetchCurrentTransactionVolumeName(t.getStagingVolumeNamePrefix());
     ConfigDiff configDiff;
     try {
       apiClient.createVolume(t.getCatalogName(), t.getSchemaName(), volumeName);
@@ -128,7 +132,7 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
         DatabricksAPIClient.createDatabricksConfig(t),
         t.getCatalogName(),
         t.getSchemaName(),
-        DatabricksAPIClient.fetchCurrentTransactionVolumeName(),
+        DatabricksAPIClient.fetchCurrentTransactionVolumeName(t.getStagingVolumeNamePrefix()),
         t.getDeleteStage(),
         t.getDeleteStageOnError());
   }

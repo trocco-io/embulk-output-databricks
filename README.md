@@ -16,6 +16,7 @@ Databricks output plugin for Embulk loads records to Databricks Delta Table.
 - **personal_access_token**: The Databaricks personal_access_token, see [Authentication settings for the Databricks JDBC Driver](https://docs.databricks.com/en/integrations/jdbc/authentication.html#authentication-pat). (string, required)
 - **catalog_name**: destination catalog name (string, required)
 - **schema_name**: destination schema name (string, required)
+- **staging_volume_name_prefix**: temporarily created managed volume prefix (string, default: "embulk_output_databricks_")
 - **delete_stage**: whether to delete a temporarily created managed volume after running embulk. (boolean, default: false)
 - **delete_stage_on_error**: if delete_stage_on_error is false and delete_stage is true, do not delete temporarily created volumes in case of error. (boolean, default: false)
 - **table**: destination table name (string, required)

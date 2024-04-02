@@ -3,4 +3,5 @@ http_path:
 personal_access_token: 
 catalog_name: 
 schema_name: 
-table_prefix: 
+table_prefix:
+staging_volume_name_prefix:

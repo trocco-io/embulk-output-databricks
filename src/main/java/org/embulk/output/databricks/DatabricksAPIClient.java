@@ -55,9 +55,9 @@ public class DatabricksAPIClient {
 
   private static String currentTransactionVolumeName = null;
 
-  public static String fetchCurrentTransactionVolumeName() {
+  public static String fetchCurrentTransactionVolumeName(String prefix) {
     if (currentTransactionVolumeName == null) {
-      currentTransactionVolumeName = createRandomUnityCatalogObjectName();
+      currentTransactionVolumeName = prefix + createRandomUnityCatalogObjectName();
     }
     return currentTransactionVolumeName;
   }
