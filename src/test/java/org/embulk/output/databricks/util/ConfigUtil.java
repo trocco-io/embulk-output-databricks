@@ -112,7 +112,7 @@ public class ConfigUtil {
       columnOption.set("timestamp_format", timestampFormat);
     }
     if (timeZone != null) {
-      columnOption.set("time_zone", timeZone);
+      columnOption.set("timezone", timeZone);
     }
     ConfigSource columnOptions =
         configSource.get(
