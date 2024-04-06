@@ -1,7 +1,7 @@
 package org.embulk.output.databricks;
 
 import static org.embulk.output.databricks.util.ConfigUtil.createPluginConfigSource;
-import static org.embulk.output.databricks.util.EmbulkIOUtil.createInputFile;
+import static org.embulk.output.databricks.util.IOUtil.createInputFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,6 +10,7 @@ import org.embulk.exec.PartialExecutionException;
 import org.embulk.output.databricks.util.DatabricksApiClientUtil;
 import org.embulk.output.jdbc.AbstractJdbcOutputPlugin;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 public class TestDatabricksOutputPluginByDeleteStaging extends AbstractTestDatabricksOutputPlugin {
@@ -27,18 +28,24 @@ public class TestDatabricksOutputPluginByDeleteStaging extends AbstractTestDatab
 
   @Test
   public void testDeleteStageOnError() throws Exception {
+    Assume.assumeFalse(needSkip());
+
     Assert.assertThrows(PartialExecutionException.class, () -> runOutputError(true, true));
     Assert.assertTrue(DatabricksApiClientUtil.fetchAllTemporaryStagingVolumes().isEmpty());
   }
 
   @Test
   public void testNotDeleteStageOnError() throws Exception {
+    Assume.assumeFalse(needSkip());
+
     Assert.assertThrows(PartialExecutionException.class, () -> runOutputError(true, false));
     Assert.assertFalse(DatabricksApiClientUtil.fetchAllTemporaryStagingVolumes().isEmpty());
   }
 
   @Test
   public void testDeleteNotStageOnErrorButStageOnError() throws Exception {
+    Assume.assumeFalse(needSkip());
+
     Assert.assertThrows(PartialExecutionException.class, () -> runOutputError(false, true));
     Assert.assertFalse(DatabricksApiClientUtil.fetchAllTemporaryStagingVolumes().isEmpty());
   }

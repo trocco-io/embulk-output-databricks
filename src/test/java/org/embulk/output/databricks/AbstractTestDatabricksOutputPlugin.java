@@ -23,9 +23,13 @@ public abstract class AbstractTestDatabricksOutputPlugin {
 
   @Rule public TemporaryFolder testFolder = new TemporaryFolder();
 
+  protected Boolean needSkip() {
+    return ConfigUtil.disableOnlineTest();
+  }
+
   @Before
   public void setup() {
-    if (ConfigUtil.disableOnlineTest()) {
+    if (needSkip()) {
       return;
     }
     ConnectionUtil.dropAllTemporaryTables();
@@ -34,7 +38,7 @@ public abstract class AbstractTestDatabricksOutputPlugin {
 
   @After
   public void cleanup() {
-    if (ConfigUtil.disableOnlineTest()) {
+    if (needSkip()) {
       return;
     }
     ConnectionUtil.dropAllTemporaryTables();

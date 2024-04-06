@@ -61,11 +61,11 @@ public class ConfigUtil {
   }
 
   public static ConfigSource createPluginConfigSource(AbstractJdbcOutputPlugin.Mode mode) {
-    return createPluginConfigSource(mode, Optional.empty());
+    return createPluginConfigSource(mode, null);
   }
 
   public static ConfigSource createPluginConfigSource(
-      AbstractJdbcOutputPlugin.Mode mode, Optional<List<String>> mergeKeys) {
+      AbstractJdbcOutputPlugin.Mode mode, List<String> mergeKeys) {
     final TestTask t = createTestTask();
 
     return CONFIG_MAPPER_FACTORY
@@ -78,7 +78,7 @@ public class ConfigUtil {
         .set("schema_name", t.getSchemaName())
         .set("mode", mode)
         .set("delete_stage_on_error", true)
-        .set("merge_keys", mergeKeys)
+        .set("merge_keys", Optional.ofNullable(mergeKeys))
         .set("delete_stage", true)
         .set("staging_volume_name_prefix", t.getStagingVolumeNamePrefix())
         .set("table", t.getTablePrefix() + "_dst");

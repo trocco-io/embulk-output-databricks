@@ -1,208 +1,138 @@
 package org.embulk.output.databricks;
 
 import static org.embulk.output.databricks.util.ConfigUtil.createPluginConfigSource;
-import static org.embulk.output.databricks.util.ConnectionUtil.quotedDstTableName;
-import static org.embulk.output.databricks.util.ConnectionUtil.runQuery;
-import static org.embulk.output.databricks.util.EmbulkIOUtil.createInputFile;
+import static org.embulk.output.databricks.util.ConnectionUtil.*;
+import static org.embulk.output.databricks.util.FixedColumnNameTableUtil.*;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.embulk.config.ConfigSource;
 import org.embulk.output.databricks.util.ConnectionUtil;
+import org.embulk.output.databricks.util.FixedColumnNameTableUtil;
+import org.embulk.output.databricks.util.IOUtil;
 import org.embulk.output.jdbc.AbstractJdbcOutputPlugin;
 import org.junit.*;
 
 public class TestDatabricksOutputPluginByMode extends AbstractTestDatabricksOutputPlugin {
+  private ConfigSource configSource;
+  private String quotedDstTableName;
+
   @Test
-  public void testInsertAsNewTable() throws Exception {
-    ConfigSource configSource = createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT);
-    String quotedDstTableName = quotedDstTableName(configSource);
-
-    File inputFile = createInputFile(testFolder, "_c0:string", "test1", "test2");
-    embulk.runOutput(configSource, inputFile.toPath());
-
-    String sql = String.format("SELECT * FROM %s ORDER BY _c0", quotedDstTableName);
-    List<Map<String, Object>> results = runQuery(sql);
-    Assert.assertEquals(2, results.size());
-    Assert.assertEquals("test1", results.get(0).get("_c0"));
-    Assert.assertEquals("test2", results.get(1).get("_c0"));
+  public void testInsertToNewTable() throws Exception {
+    testKindOfInsertToNewTable(AbstractJdbcOutputPlugin.Mode.INSERT);
   }
 
   @Test
   public void testInsertToExistTable() throws Exception {
-    ConfigSource configSource = createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT);
-    String quotedDstTableName = quotedDstTableName(configSource);
-    String createTableSQL = String.format("CREATE TABLE %s (_c0 string)", quotedDstTableName);
-    ConnectionUtil.run(createTableSQL);
-
-    String insertTableSQL = String.format("INSERT INTO %s VALUES ('test0')", quotedDstTableName);
-    ConnectionUtil.run(insertTableSQL);
-
-    File inputFile = createInputFile(testFolder, "_c0:string", "test1", "test2");
-    embulk.runOutput(configSource, inputFile.toPath());
-
-    String sql = String.format("SELECT * FROM %s ORDER BY _c0", quotedDstTableName);
-    List<Map<String, Object>> results = runQuery(sql);
-    Assert.assertEquals(3, results.size());
-    Assert.assertEquals("test0", results.get(0).get("_c0"));
-    Assert.assertEquals("test1", results.get(1).get("_c0"));
-    Assert.assertEquals("test2", results.get(2).get("_c0"));
+    testKindOfInsertToExistTable(AbstractJdbcOutputPlugin.Mode.INSERT);
   }
 
   @Test
-  public void testInsertDirectAsNewTable() throws Exception {
-    ConfigSource configSource =
-        createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT_DIRECT);
-    String quotedDstTableName = quotedDstTableName(configSource);
-
-    File inputFile = createInputFile(testFolder, "_c0:string", "test1", "test2");
-    embulk.runOutput(configSource, inputFile.toPath());
-
-    String sql = String.format("SELECT * FROM %s ORDER BY _c0", quotedDstTableName);
-    List<Map<String, Object>> results = runQuery(sql);
-    Assert.assertEquals(2, results.size());
-    Assert.assertEquals("test1", results.get(0).get("_c0"));
-    Assert.assertEquals("test2", results.get(1).get("_c0"));
+  public void testInsertDirectToNewTable() throws Exception {
+    testKindOfInsertToNewTable(AbstractJdbcOutputPlugin.Mode.INSERT_DIRECT);
   }
 
   @Test
   public void testInsertDirectToExistTable() throws Exception {
-    ConfigSource configSource =
-        createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT_DIRECT);
-    String quotedDstTableName = quotedDstTableName(configSource);
-    String createTableSQL = String.format("CREATE TABLE %s (_c0 string)", quotedDstTableName);
-    ConnectionUtil.run(createTableSQL);
+    testKindOfInsertToExistTable(AbstractJdbcOutputPlugin.Mode.INSERT_DIRECT);
+  }
 
-    String insertTableSQL = String.format("INSERT INTO %s VALUES ('test0')", quotedDstTableName);
-    ConnectionUtil.run(insertTableSQL);
+  private void testKindOfInsertToNewTable(AbstractJdbcOutputPlugin.Mode mode) throws IOException {
+    setPluginConfigSource(mode);
+    embulk.runOutput(configSource, createInputFile("test1,11", "test2,12").toPath());
+    assertQueryResults("test1,11", "test2,12");
+  }
 
-    File inputFile = createInputFile(testFolder, "_c0:string", "test1", "test2");
-    embulk.runOutput(configSource, inputFile.toPath());
-
-    String sql = String.format("SELECT * FROM %s ORDER BY _c0", quotedDstTableName);
-    List<Map<String, Object>> results = runQuery(sql);
-    Assert.assertEquals(3, results.size());
-    Assert.assertEquals("test0", results.get(0).get("_c0"));
-    Assert.assertEquals("test1", results.get(1).get("_c0"));
-    Assert.assertEquals("test2", results.get(2).get("_c0"));
+  public void testKindOfInsertToExistTable(AbstractJdbcOutputPlugin.Mode mode) throws Exception {
+    setPluginConfigSource(mode);
+    createTable("test0,0", "test1,1");
+    embulk.runOutput(configSource, createInputFile("test1,11", "test2,12").toPath());
+    assertQueryResults("test0,0", "test1,1", "test1,11", "test2,12");
   }
 
   @Test
-  public void testTruncateInsertAsNewTable() throws Exception {
-    ConfigSource configSource =
-        createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.TRUNCATE_INSERT);
-    String quotedDstTableName = quotedDstTableName(configSource);
-
-    File inputFile = createInputFile(testFolder, "_c0:string", "test1", "test2");
-    embulk.runOutput(configSource, inputFile.toPath());
-
-    String sql = String.format("SELECT * FROM %s ORDER BY _c0", quotedDstTableName);
-    List<Map<String, Object>> results = runQuery(sql);
-    Assert.assertEquals(2, results.size());
-    Assert.assertEquals("test1", results.get(0).get("_c0"));
-    Assert.assertEquals("test2", results.get(1).get("_c0"));
+  public void testTruncateInsertToNewTable() throws Exception {
+    testKindOfReplaceToNewTable(AbstractJdbcOutputPlugin.Mode.TRUNCATE_INSERT);
   }
 
   @Test
   public void testTruncateInsertToExistTable() throws Exception {
-    ConfigSource configSource =
-        createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.TRUNCATE_INSERT);
-    String quotedDstTableName = quotedDstTableName(configSource);
-    String createTableSQL = String.format("CREATE TABLE %s (_c0 string)", quotedDstTableName);
-    ConnectionUtil.run(createTableSQL);
-
-    String insertTableSQL = String.format("INSERT INTO %s VALUES ('test0')", quotedDstTableName);
-    ConnectionUtil.run(insertTableSQL);
-
-    File inputFile = createInputFile(testFolder, "_c0:string", "test1", "test2");
-    embulk.runOutput(configSource, inputFile.toPath());
-
-    String sql = String.format("SELECT * FROM %s ORDER BY _c0", quotedDstTableName);
-    List<Map<String, Object>> results = runQuery(sql);
-    Assert.assertEquals(2, results.size());
-    Assert.assertEquals("test1", results.get(0).get("_c0"));
-    Assert.assertEquals("test2", results.get(1).get("_c0"));
+    testKindOfReplaceToExistTable(AbstractJdbcOutputPlugin.Mode.TRUNCATE_INSERT);
   }
 
   @Test
-  public void testReplaceAsNewTable() throws Exception {
-    ConfigSource configSource = createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.REPLACE);
-    String quotedDstTableName = quotedDstTableName(configSource);
-
-    File inputFile = createInputFile(testFolder, "_c0:string", "test1", "test2");
-    embulk.runOutput(configSource, inputFile.toPath());
-
-    String sql = String.format("SELECT * FROM %s ORDER BY _c0", quotedDstTableName);
-    List<Map<String, Object>> results = runQuery(sql);
-    Assert.assertEquals(2, results.size());
-    Assert.assertEquals("test1", results.get(0).get("_c0"));
-    Assert.assertEquals("test2", results.get(1).get("_c0"));
+  public void testReplaceToNewTable() throws Exception {
+    testKindOfReplaceToNewTable(AbstractJdbcOutputPlugin.Mode.REPLACE);
   }
 
   @Test
   public void testReplaceToExistTable() throws Exception {
-    ConfigSource configSource = createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.REPLACE);
-    String quotedDstTableName = quotedDstTableName(configSource);
-    String createTableSQL = String.format("CREATE TABLE %s (_c0 string)", quotedDstTableName);
-    ConnectionUtil.run(createTableSQL);
+    testKindOfReplaceToExistTable(AbstractJdbcOutputPlugin.Mode.REPLACE);
+  }
 
-    String insertTableSQL = String.format("INSERT INTO %s VALUES ('test0')", quotedDstTableName);
-    ConnectionUtil.run(insertTableSQL);
+  public void testKindOfReplaceToExistTable(AbstractJdbcOutputPlugin.Mode mode) throws Exception {
+    setPluginConfigSource(mode);
+    createTable("test0,0", "test1, 1");
+    embulk.runOutput(configSource, createInputFile("test1,11", "test2,12").toPath());
+    assertQueryResults("test1,11", "test2,12");
+  }
 
-    File inputFile = createInputFile(testFolder, "_c0:string", "test1", "test2");
-    embulk.runOutput(configSource, inputFile.toPath());
-
-    String sql = String.format("SELECT * FROM %s ORDER BY _c0", quotedDstTableName);
-    List<Map<String, Object>> results = runQuery(sql);
-    Assert.assertEquals(2, results.size());
-    Assert.assertEquals("test1", results.get(0).get("_c0"));
-    Assert.assertEquals("test2", results.get(1).get("_c0"));
+  public void testKindOfReplaceToNewTable(AbstractJdbcOutputPlugin.Mode mode) throws Exception {
+    setPluginConfigSource(mode);
+    embulk.runOutput(configSource, createInputFile("test1,11", "test2,12").toPath());
+    assertQueryResults("test1,11", "test2,12");
   }
 
   @Test
-  public void testMergeAsNewTable() throws Exception {
-    List<String> mergeKeys = new ArrayList<>(Collections.singletonList("_c0"));
-    ConfigSource configSource =
-        createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.MERGE, Optional.of(mergeKeys));
-    String quotedDstTableName = quotedDstTableName(configSource);
-
-    File inputFile = createInputFile(testFolder, "_c0:string,_c1:long", "test1,1", "test2,2");
-    embulk.runOutput(configSource, inputFile.toPath());
-
-    String sql = String.format("SELECT * FROM %s ORDER BY _c0", quotedDstTableName);
-    List<Map<String, Object>> results = runQuery(sql);
-    Assert.assertEquals(2, results.size());
-    Assert.assertEquals("test1", results.get(0).get("_c0"));
-    Assert.assertEquals(1L, results.get(0).get("_c1"));
-    Assert.assertEquals("test2", results.get(1).get("_c0"));
-    Assert.assertEquals(2L, results.get(1).get("_c1"));
+  public void testMergeToNewTable() throws Exception {
+    setPluginConfigSource(AbstractJdbcOutputPlugin.Mode.MERGE, "_c0");
+    embulk.runOutput(configSource, createInputFile("test1,11", "test2,12").toPath());
+    assertQueryResults("test1,11", "test2,12");
   }
 
   @Test
   public void testMergeToExistTable() throws Exception {
-    List<String> mergeKeys = new ArrayList<>(Collections.singletonList("_c0"));
-    ConfigSource configSource =
-        createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.MERGE, Optional.of(mergeKeys));
-    String quotedDstTableName = quotedDstTableName(configSource);
-    String createTableSQL =
-        String.format("CREATE TABLE %s (_c0 string, _c1 long)", quotedDstTableName);
-    ConnectionUtil.run(createTableSQL);
+    setPluginConfigSource(AbstractJdbcOutputPlugin.Mode.MERGE, "_c0");
+    createTable("test0,0", "test1, 1");
+    embulk.runOutput(configSource, createInputFile("test1,11", "test2,12").toPath());
+    assertQueryResults("test0,0", "test1,11", "test2,12");
+  }
 
-    String insertTableSQL =
-        String.format("INSERT INTO %s VALUES ('test0', 0), ('test1', 1)", quotedDstTableName);
-    ConnectionUtil.run(insertTableSQL);
+  private void setPluginConfigSource(AbstractJdbcOutputPlugin.Mode mode, String... mergeKeys) {
+    configSource = createPluginConfigSource(mode, Arrays.asList(mergeKeys));
+    quotedDstTableName = quotedDstTableName(configSource);
+  }
 
-    File inputFile = createInputFile(testFolder, "_c0:string,_c1:long", "test1,11", "test2,12");
-    embulk.runOutput(configSource, inputFile.toPath());
+  private void createTable(String... rows) {
+    String[] sqlTypes = sqlTypes(rows[0]);
+    ConnectionUtil.run(createTableSQL(quotedDstTableName, sqlTypes));
+    ConnectionUtil.run(insertSQL(quotedDstTableName, sqlTypes, rows));
+  }
 
-    String sql = String.format("SELECT * FROM %s ORDER BY _c0", quotedDstTableName);
+  private File createInputFile(String... rows) throws IOException {
+    return IOUtil.createInputFile(testFolder, csvHeader(sqlTypes(rows[0])), rows);
+  }
+
+  private void assertQueryResults(String... rows) {
+    int numberOfColumns = rows[0].split(",").length;
+    List<String> data = new ArrayList<>();
+    for (String row : rows) {
+      data.addAll(Arrays.asList(row.split(",")));
+    }
+    String order =
+        IntStream.range(0, numberOfColumns)
+            .mapToObj(FixedColumnNameTableUtil::columnName)
+            .collect(Collectors.joining(", "));
+    String sql = String.format("SELECT * FROM %s ORDER BY %s", quotedDstTableName, order);
     List<Map<String, Object>> results = runQuery(sql);
-    Assert.assertEquals(3, results.size());
-    Assert.assertEquals("test0", results.get(0).get("_c0"));
-    Assert.assertEquals(0L, results.get(0).get("_c1"));
-    Assert.assertEquals("test1", results.get(1).get("_c0"));
-    Assert.assertEquals(11L, results.get(1).get("_c1"));
-    Assert.assertEquals("test2", results.get(2).get("_c0"));
-    Assert.assertEquals(12L, results.get(2).get("_c1"));
+    assertTableResults(results, numberOfColumns, data.toArray());
+  }
+
+  private String[] sqlTypes(String sampleRow) {
+    int numberOfColumns = sampleRow.split(",").length;
+    return IntStream.range(0, numberOfColumns).mapToObj(x -> "string").toArray(String[]::new);
   }
 }

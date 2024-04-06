@@ -3,7 +3,7 @@ package org.embulk.output.databricks;
 import static org.embulk.output.databricks.util.ConfigUtil.createPluginConfigSource;
 import static org.embulk.output.databricks.util.ConnectionUtil.quotedDstTableName;
 import static org.embulk.output.databricks.util.ConnectionUtil.runQuery;
-import static org.embulk.output.databricks.util.EmbulkIOUtil.createInputFile;
+import static org.embulk.output.databricks.util.IOUtil.createInputFile;
 
 import java.io.File;
 import java.io.IOException;
