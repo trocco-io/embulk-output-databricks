@@ -4,6 +4,7 @@ import static org.embulk.output.databricks.util.ConfigUtil.createPluginConfigSou
 import static org.embulk.output.databricks.util.EmbulkIOUtil.createInputFile;
 
 import java.io.File;
+import java.io.IOException;
 import org.embulk.config.ConfigSource;
 import org.embulk.exec.PartialExecutionException;
 import org.embulk.output.databricks.util.DatabricksApiClientUtil;
@@ -14,59 +15,52 @@ import org.junit.Test;
 public class TestDatabricksOutputPluginByDeleteStaging extends AbstractTestDatabricksOutputPlugin {
   @Test
   public void testDeleteStage() throws Exception {
-    ConfigSource configSource = createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT);
-    configSource.set("delete_stage", true);
-    File inputFile = createInputFile(testFolder, "_c0:string", "test1");
-
-    Assert.assertTrue(DatabricksApiClientUtil.fetchAllTemporaryStagingVolumes().isEmpty());
-
-    embulk.runOutput(configSource, inputFile.toPath());
-
+    runOutputSuccess(true, true);
     Assert.assertTrue(DatabricksApiClientUtil.fetchAllTemporaryStagingVolumes().isEmpty());
   }
 
   @Test
   public void testNotDeleteStage() throws Exception {
-    ConfigSource configSource = createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT);
-    configSource.set("delete_stage", false);
-    File inputFile = createInputFile(testFolder, "_c0:string", "test1");
-
-    Assert.assertTrue(DatabricksApiClientUtil.fetchAllTemporaryStagingVolumes().isEmpty());
-
-    embulk.runOutput(configSource, inputFile.toPath());
-
+    runOutputSuccess(false, false);
     Assert.assertFalse(DatabricksApiClientUtil.fetchAllTemporaryStagingVolumes().isEmpty());
   }
 
   @Test
   public void testDeleteStageOnError() throws Exception {
-    ConfigSource configSource =
-        createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.MERGE_DIRECT);
-    configSource.set("delete_stage", true);
-    configSource.set("delete_stage_on_error", true);
-    File inputFile = createInputFile(testFolder, "_c0:string", "test1");
-
-    Assert.assertTrue(DatabricksApiClientUtil.fetchAllTemporaryStagingVolumes().isEmpty());
-
-    Assert.assertThrows(
-        PartialExecutionException.class, () -> embulk.runOutput(configSource, inputFile.toPath()));
-
+    Assert.assertThrows(PartialExecutionException.class, () -> runOutputError(true, true));
     Assert.assertTrue(DatabricksApiClientUtil.fetchAllTemporaryStagingVolumes().isEmpty());
   }
 
   @Test
   public void testNotDeleteStageOnError() throws Exception {
-    ConfigSource configSource =
-        createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.MERGE_DIRECT);
-    configSource.set("delete_stage", true);
-    configSource.set("delete_stage_on_error", false);
+    Assert.assertThrows(PartialExecutionException.class, () -> runOutputError(true, false));
+    Assert.assertFalse(DatabricksApiClientUtil.fetchAllTemporaryStagingVolumes().isEmpty());
+  }
+
+  @Test
+  public void testDeleteNotStageOnErrorButStageOnError() throws Exception {
+    Assert.assertThrows(PartialExecutionException.class, () -> runOutputError(false, true));
+    Assert.assertFalse(DatabricksApiClientUtil.fetchAllTemporaryStagingVolumes().isEmpty());
+  }
+
+  private void runOutput(
+      AbstractJdbcOutputPlugin.Mode mode, Boolean deleteStage, Boolean deleteStageOnError)
+      throws IOException {
+    ConfigSource configSource = createPluginConfigSource(mode);
+    configSource.set("delete_stage", deleteStage);
+    configSource.set("delete_stage_on_error", deleteStageOnError);
     File inputFile = createInputFile(testFolder, "_c0:string", "test1");
 
     Assert.assertTrue(DatabricksApiClientUtil.fetchAllTemporaryStagingVolumes().isEmpty());
+    embulk.runOutput(configSource, inputFile.toPath());
+  }
 
-    Assert.assertThrows(
-        PartialExecutionException.class, () -> embulk.runOutput(configSource, inputFile.toPath()));
+  private void runOutputSuccess(Boolean deleteStage, Boolean deleteStageOnError)
+      throws IOException {
+    runOutput(AbstractJdbcOutputPlugin.Mode.INSERT, deleteStage, deleteStageOnError);
+  }
 
-    Assert.assertFalse(DatabricksApiClientUtil.fetchAllTemporaryStagingVolumes().isEmpty());
+  private void runOutputError(Boolean deleteStage, Boolean deleteStageOnError) throws IOException {
+    runOutput(AbstractJdbcOutputPlugin.Mode.MERGE_DIRECT, deleteStage, deleteStageOnError);
   }
 }
