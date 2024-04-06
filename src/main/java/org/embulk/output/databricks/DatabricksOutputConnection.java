@@ -277,6 +277,8 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
         return "STRING";
       case "DOUBLE PRECISION":
         return "DOUBLE";
+      case "FLOAT": // If not specified here, it will be recognized as FLOAT(X).
+        return "FLOAT";
       default:
         return super.buildColumnTypeName(c);
     }
