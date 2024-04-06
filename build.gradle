@@ -93,14 +93,11 @@ publishing {
 }
 gem {
     from("LICENSE.txt")
-    authors = [ "todo" ]
-    email = [ "test@example.com" ]
+    authors = [ "" ]
+    email = [ "" ]
     summary = "Databricks output plugin for Embulk"
     homepage = "https://github.com/trocco-io/embulk-output-databricks"
     licenses = [ "MIT" ]
-}
-gemPush {
-    host = "https://rubygems.org"
 }
 spotless {
     java {
