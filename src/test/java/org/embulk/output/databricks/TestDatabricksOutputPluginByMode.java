@@ -96,9 +96,39 @@ public class TestDatabricksOutputPluginByMode extends AbstractTestDatabricksOutp
   @Test
   public void testMergeToExistTable() throws Exception {
     setPluginConfigSource(AbstractJdbcOutputPlugin.Mode.MERGE, "_c0");
-    createTable("test0,0", "test1, 1");
+    createTable("test0,0", "test1,1");
     embulk.runOutput(configSource, createInputFile("test1,11", "test2,12").toPath());
     assertQueryResults("test0,0", "test1,11", "test2,12");
+  }
+
+  @Test
+  public void testMergeToExistTableWithMergeKeys2() throws Exception {
+    setPluginConfigSource(AbstractJdbcOutputPlugin.Mode.MERGE, "_c0", "_c1");
+    createTable("test0,0,a", "test1,0,b", "test1,1,c");
+    embulk.runOutput(configSource, createInputFile("test1,0,B", "test2,0,D").toPath());
+    assertQueryResults("test0,0,a", "test1,0,B", "test1,1,c", "test2,0,D");
+  }
+
+  @Test
+  public void testMergeToExistTableWithMergeRules() throws Exception {
+    setPluginConfigSource(AbstractJdbcOutputPlugin.Mode.MERGE, "_c0");
+    setMergeRule("_c1 = CONCAT(T._c1, 'test', S._c1)");
+    createTable("test0,0", "test1,1");
+    embulk.runOutput(configSource, createInputFile("test1,89", "test2,12").toPath());
+    assertQueryResults("test0,0", "test1,1test89", "test2,12");
+  }
+
+  @Test
+  public void testMergeToExistTableWithMergeRules2() throws Exception {
+    setPluginConfigSource(AbstractJdbcOutputPlugin.Mode.MERGE, "_c0");
+    setMergeRule("_c1 = CONCAT(T._c1, 'test', S._c1)", "_c2 = CONCAT(T._c2, 'TEST', S._c2)");
+    createTable("test0,0,a", "test1,1,b");
+    embulk.runOutput(configSource, createInputFile("test1,89,B", "test2,12,C").toPath());
+    assertQueryResults("test0,0,a", "test1,1test89,bTESTB", "test2,12,C");
+  }
+
+  private void setMergeRule(String... mergeRules) {
+    configSource.set("merge_rule", Arrays.asList(mergeRules));
   }
 
   private void setPluginConfigSource(AbstractJdbcOutputPlugin.Mode mode, String... mergeKeys) {
