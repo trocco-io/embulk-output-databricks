@@ -14,7 +14,7 @@ import org.embulk.output.jdbc.AbstractJdbcOutputPlugin;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class TestDatabaricksOutputPluginByNullOrEmptyString
+public class TestDatabricksOutputPluginByNullOrEmptyString
     extends AbstractTestDatabricksOutputPlugin {
   @Test
   public void testNull() throws Exception {

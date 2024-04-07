@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.time.ZoneId;
 import org.junit.Test;
 
-public class TestDatabricksOuputPluginByTimestamp extends AbstractTestDatabricksOutputPlugin {
+public class TestDatabricksOutputPluginByTimestamp extends AbstractTestDatabricksOutputPlugin {
   @Test
   public void testTimestamp() throws IOException {
     testOutputValues(
