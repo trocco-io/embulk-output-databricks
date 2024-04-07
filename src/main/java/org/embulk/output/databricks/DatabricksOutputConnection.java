@@ -126,7 +126,7 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
 
   // https://docs.databricks.com/en/ingestion/copy-into/examples.html#load-csv-files-with-copy-into
   // https://docs.databricks.com/en/sql/language-manual/delta-copy-into.html
-  private String buildCopySQL(TableIdentifier table, String filePath, JdbcSchema jdbcSchema) {
+  protected String buildCopySQL(TableIdentifier table, String filePath, JdbcSchema jdbcSchema) {
     StringBuilder sb = new StringBuilder();
     sb.append("COPY INTO ");
     quoteTableIdentifier(sb, table);
@@ -207,7 +207,7 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
       MergeConfig mergeConfig)
       throws SQLException {
     StringBuilder sb = new StringBuilder();
-    sb.append(" MERGE INTO ");
+    sb.append("MERGE INTO ");
     quoteTableIdentifier(sb, toTable);
     sb.append(" T ");
     sb.append(" USING ");
@@ -254,7 +254,7 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
     return sb.toString();
   }
 
-  private String buildAggregateSQL(List<TableIdentifier> fromTables, TableIdentifier toTable) {
+  protected String buildAggregateSQL(List<TableIdentifier> fromTables, TableIdentifier toTable) {
     StringBuilder sb = new StringBuilder();
     sb.append("INSERT INTO ");
     quoteTableIdentifier(sb, toTable);
@@ -266,7 +266,7 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
       sb.append("SELECT * FROM ");
       quoteTableIdentifier(sb, fromTables.get(i));
     }
-    sb.append(" ); ");
+    sb.append(" );");
     return sb.toString();
   }
 
