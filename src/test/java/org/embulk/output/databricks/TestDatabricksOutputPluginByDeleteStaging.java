@@ -28,25 +28,19 @@ public class TestDatabricksOutputPluginByDeleteStaging extends AbstractTestDatab
 
   @Test
   public void testDeleteStageOnError() throws Exception {
-    Assume.assumeFalse(needSkip());
-
-    Assert.assertThrows(PartialExecutionException.class, () -> runOutputError(true, true));
+    runOutputError(true, true);
     Assert.assertTrue(DatabricksApiClientUtil.fetchAllTemporaryStagingVolumes().isEmpty());
   }
 
   @Test
   public void testNotDeleteStageOnError() throws Exception {
-    Assume.assumeFalse(needSkip());
-
-    Assert.assertThrows(PartialExecutionException.class, () -> runOutputError(true, false));
+    runOutputError(true, false);
     Assert.assertFalse(DatabricksApiClientUtil.fetchAllTemporaryStagingVolumes().isEmpty());
   }
 
   @Test
   public void testDeleteNotStageOnErrorButStageOnError() throws Exception {
-    Assume.assumeFalse(needSkip());
-
-    Assert.assertThrows(PartialExecutionException.class, () -> runOutputError(false, true));
+    runOutputError(false, true);
     Assert.assertFalse(DatabricksApiClientUtil.fetchAllTemporaryStagingVolumes().isEmpty());
   }
 
@@ -67,7 +61,12 @@ public class TestDatabricksOutputPluginByDeleteStaging extends AbstractTestDatab
     runOutput(AbstractJdbcOutputPlugin.Mode.INSERT, deleteStage, deleteStageOnError);
   }
 
-  private void runOutputError(Boolean deleteStage, Boolean deleteStageOnError) throws IOException {
-    runOutput(AbstractJdbcOutputPlugin.Mode.MERGE_DIRECT, deleteStage, deleteStageOnError);
+  private void runOutputError(Boolean deleteStage, Boolean deleteStageOnError) {
+    Assume.assumeFalse(needSkip());
+
+    Assert.assertThrows(
+        PartialExecutionException.class,
+        () ->
+            runOutput(AbstractJdbcOutputPlugin.Mode.MERGE_DIRECT, deleteStage, deleteStageOnError));
   }
 }
