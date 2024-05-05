@@ -37,17 +37,27 @@ jobs:
       - name: lint
         # Run ./gradlew spotlessApply when failing on this step.
         run: ./gradlew spotlessCheck
+      - name: Write test secret to file
+        run: envsubst < ci/config_template.yml > test-config.yml
+        env:
+          SERVER_HOSTNAME: ${{ secrets.TEST_SERVER_HOSTNAME }}
+          HTTP_PATH: ${{ secrets.TEST_HTTP_PATH }}
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.TEST_PERSONAL_ACCESS_TOKEN }}
+          CATALOG_NAME: ${{ secrets.TEST_CATALOG_NAME }}
+          SCHEMA_NAME: ${{ secrets.TEST_SCHEMA_NAME }}
+          TABLE_PREFIX: ${{ secrets.TEST_TABLE_PREFIX }}
+          STAGING_VOLUME_NAME_PREFIX: ${{ secrets.TEST_STAGING_VOLUME_NAME_PREFIX }}
       - run: ./gradlew test
+        env:
+          EMBULK_OUTPUT_DATABRICKS_TEST_CONFIG: "./test-config.yml"
       - name: Show Current Version
         run: ./gradlew printVersion
       - name: Build Gem & Put it into './build/gems/' Directory
         run: ./gradlew gem
-
       - name: Set up JRuby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: jruby
-
       - name: Publish to GPR
         if: startsWith( github.ref, 'refs/tags/' )
         run: |
