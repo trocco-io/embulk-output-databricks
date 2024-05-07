@@ -59,6 +59,13 @@ Databricks output plugin for Embulk loads records to Databricks Delta Table.
   * Transactional: Yes.
   * Resumable: No.
 
+## Note
+
+This plugin also does not support TIMESTAMP_NTZ、INTERVAL types, if target tables contain these types, embulk will raise a runtime error.
+（Because [The official Databricks JDBC driver does not support TIMESTAMP_NTZ、INTERVAL types](https://docs.databricks.com/en/sql/language-manual/data-types/timestamp-ntz-type.html#notes).）
+
+This plugin converts empty string input to null output. If you want to empty string output, you can use continuous double quote string ("").
+
 ## Build
 
 ```
