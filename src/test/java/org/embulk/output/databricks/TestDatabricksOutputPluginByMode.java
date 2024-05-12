@@ -127,23 +127,35 @@ public class TestDatabricksOutputPluginByMode extends AbstractTestDatabricksOutp
     assertQueryResults("test0,0,a", "test1,1test89,bTESTB", "test2,12,C");
   }
 
+  @Test
+  public void testMergeNoKeyToExistTable() throws Exception {
+    setPluginConfigSource(AbstractJdbcOutputPlugin.Mode.MERGE);
+    String[] sqlTypes = sqlStringTypes(2);
+    ConnectionUtil.run(
+        String.format("CREATE TABLE %s (_c0 STRING PRIMARY KEY, _c1 STRING)", quotedDstTableName));
+    ConnectionUtil.run(insertSQL(quotedDstTableName, sqlTypes, "test0,0", "test1,1"));
+    embulk.runOutput(configSource, createInputFile("test1,11", "test2,12").toPath());
+    assertQueryResults("test0,0", "test1,11", "test2,12");
+  }
+
   private void setMergeRule(String... mergeRules) {
     configSource.set("merge_rule", Arrays.asList(mergeRules));
   }
 
   private void setPluginConfigSource(AbstractJdbcOutputPlugin.Mode mode, String... mergeKeys) {
-    configSource = createPluginConfigSource(mode, Arrays.asList(mergeKeys));
+    configSource =
+        createPluginConfigSource(mode, mergeKeys.length > 0 ? Arrays.asList(mergeKeys) : null);
     quotedDstTableName = quotedDstTableName(configSource);
   }
 
   private void createTable(String... rows) {
-    String[] sqlTypes = sqlTypes(rows[0]);
+    String[] sqlTypes = sqlStringTypes(rows[0]);
     ConnectionUtil.run(createTableSQL(quotedDstTableName, sqlTypes));
     ConnectionUtil.run(insertSQL(quotedDstTableName, sqlTypes, rows));
   }
 
   private File createInputFile(String... rows) throws IOException {
-    return IOUtil.createInputFile(testFolder, csvHeader(sqlTypes(rows[0])), rows);
+    return IOUtil.createInputFile(testFolder, csvHeader(sqlStringTypes(rows[0])), rows);
   }
 
   private void assertQueryResults(String... rows) {
@@ -161,8 +173,12 @@ public class TestDatabricksOutputPluginByMode extends AbstractTestDatabricksOutp
     assertTableResults(results, numberOfColumns, data.toArray());
   }
 
-  private String[] sqlTypes(String sampleRow) {
+  private String[] sqlStringTypes(String sampleRow) {
     int numberOfColumns = sampleRow.split(",").length;
+    return sqlStringTypes(numberOfColumns);
+  }
+
+  private String[] sqlStringTypes(int numberOfColumns) {
     return IntStream.range(0, numberOfColumns).mapToObj(x -> "string").toArray(String[]::new);
   }
 }
