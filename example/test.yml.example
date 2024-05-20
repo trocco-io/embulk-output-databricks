@@ -1,3 +1,5 @@
+# The catalog_name and schema_name must be created in advance.
+
 server_hostname: 
 http_path: 
 personal_access_token: 
