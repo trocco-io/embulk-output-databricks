@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.ZoneId;
 import org.junit.Test;
 
 public class TestDatabricksOutputPluginByOutputType extends AbstractTestDatabricksOutputPlugin {
@@ -67,7 +68,31 @@ public class TestDatabricksOutputPluginByOutputType extends AbstractTestDatabric
             "timestamp",
             Timestamp.valueOf("2000-01-02 03:04:05.0")),
         new TestTypeSet(
-            "2000-01-02 03:04:05.00 UTC", "timestamp", "date", Date.valueOf("2000-01-02")));
+            "2000-01-02 03:04:05.00 UTC", "timestamp", "date", Date.valueOf("2000-01-02")),
+        new TestTimestampSet(
+            "2000-01-02 03:04:05.00 UTC",
+            "%Y-%m-%d",
+            null,
+            Timestamp.valueOf("2000-01-02 00:00:00.0")),
+        new TestTimestampSet(
+            "2000-01-02 03:04:05.00 UTC", "%Y", null, Timestamp.valueOf("2000-01-01 00:00:00.0")),
+        new TestTimestampSet(
+            "2000-01-02 20:04:05.00 UTC",
+            "%Y-%m-%d",
+            ZoneId.of("Asia/Tokyo"),
+            Timestamp.valueOf("2000-01-03 00:00:00.0")),
+        new TestTimestampToStringSet(
+            "2000-01-02 03:04:05.00 UTC", "%Y/%m/%d %H-%M-%S", null, "2000/01/02 03-04-05"),
+        new TestTimestampToStringSet(
+            "2000-01-02 03:04:05.00 UTC",
+            null,
+            ZoneId.of("Asia/Tokyo"),
+            "2000-01-02 12:04:05.000000"),
+        new TestTimestampToStringSet(
+            "2000-01-02 03:04:05.00 UTC",
+            "%Y/%m/%d %H-%M-%S",
+            ZoneId.of("Asia/Tokyo"),
+            "2000/01/02 12-04-05"));
   }
 
   @Test
@@ -77,9 +102,29 @@ public class TestDatabricksOutputPluginByOutputType extends AbstractTestDatabric
   }
 
   protected class TestTypeSet extends TestSet {
-
     TestTypeSet(String value, String inputType, String outputType, Object expected) {
       super(value, inputType, outputType, null, null, null, expected);
+    }
+  }
+
+  protected class TestTimestampSet extends TestSet {
+    TestTimestampSet(
+        String value, String outputTimestampFormat, ZoneId outputTimezone, Object expected) {
+      super(
+          value,
+          "timestamp",
+          "timestamp",
+          "string",
+          outputTimestampFormat,
+          outputTimezone,
+          expected);
+    }
+  }
+
+  protected class TestTimestampToStringSet extends TestSet {
+    TestTimestampToStringSet(
+        String value, String outputTimestampFormat, ZoneId outputTimezone, Object expected) {
+      super(value, "timestamp", "string", null, outputTimestampFormat, outputTimezone, expected);
     }
   }
 }
