@@ -178,6 +178,10 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     final Set<String> primaryKeys = Collections.unmodifiableSet(primaryKeysBuilder);
 
     final ArrayList<JdbcColumn> builder = new ArrayList<>();
+    // NOTE: Columns of TIMESTAMP_NTZ are not included in getColumns result.
+    // This cause runtime sql exception when creating table.
+    // (probably because of unsupported in databricks jdbc)
+    // https://docs.databricks.com/en/sql/language-manual/data-types/timestamp-ntz-type.html#notes
     rs =
         dbm.getColumns(
             JdbcUtils.escapeSearchString(table.getDatabase(), escape),
