@@ -15,15 +15,51 @@ import org.junit.Test;
 
 public class TestDatabricksOutputPluginByUnsupported extends AbstractTestDatabricksOutputPlugin {
   @Test
+  public void testUnsupportedInvalidType() throws IOException {
+    ConfigSource configSource = createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT);
+    setColumnOption(configSource, "_c0", "Invalid");
+    File inputFile = createInputFile(testFolder, "_c0:string", "invalid");
+    PartialExecutionException partialExecutionException =
+        Assert.assertThrows(
+            PartialExecutionException.class,
+            () -> embulk.runOutput(configSource, inputFile.toPath()));
+    SQLException mainException =
+        (SQLException) partialExecutionException.getCause().getCause().getCause().getCause();
+    String errorMsg = mainException.getMessage();
+    Assert.assertTrue(errorMsg, errorMsg.contains("Unsupported data type \"INVALID\""));
+  }
+
+  @Test
   public void testUnsupportedTimestampNTZType() throws IOException {
     ConfigSource configSource = createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT);
     setColumnOption(configSource, "_c0", "timestamp_ntz");
     File inputFile = createInputFile(testFolder, "_c0:string", "2000-01-02 03:04:05.00 UTC");
-    PartialExecutionException e =
+    PartialExecutionException partialExecutionException =
         Assert.assertThrows(
             PartialExecutionException.class,
             () -> embulk.runOutput(configSource, inputFile.toPath()));
-    Assert.assertTrue(
-        e.getCause().getCause().getCause().getCause().getCause() instanceof SQLException);
+    SQLException mainException =
+        (SQLException)
+            partialExecutionException.getCause().getCause().getCause().getCause().getCause();
+    String errorMsg = mainException.getMessage();
+    Assert.assertTrue(errorMsg, errorMsg.contains("Syntax error at or near ','"));
+    Assert.assertTrue(errorMsg, errorMsg.contains("COPY INTO"));
+  }
+
+  @Test
+  public void testUnsupportedIntervalType() throws IOException {
+    ConfigSource configSource = createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT);
+    setColumnOption(configSource, "_c0", "INTERVAL DAY TO SECOND");
+    File inputFile = createInputFile(testFolder, "_c0:string", "11 23:4:0");
+    PartialExecutionException partialExecutionException =
+        Assert.assertThrows(
+            PartialExecutionException.class,
+            () -> embulk.runOutput(configSource, inputFile.toPath()));
+    SQLException mainException =
+        (SQLException)
+            partialExecutionException.getCause().getCause().getCause().getCause().getCause();
+    String errorMsg = mainException.getMessage();
+    Assert.assertTrue(errorMsg, errorMsg.contains("Syntax error at or near ','"));
+    Assert.assertTrue(errorMsg, errorMsg.contains("COPY INTO"));
   }
 }
