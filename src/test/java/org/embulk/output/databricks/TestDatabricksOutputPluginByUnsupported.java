@@ -62,4 +62,59 @@ public class TestDatabricksOutputPluginByUnsupported extends AbstractTestDatabri
     Assert.assertTrue(errorMsg, errorMsg.contains("Syntax error at or near ','"));
     Assert.assertTrue(errorMsg, errorMsg.contains("COPY INTO"));
   }
+
+  @Test
+  public void testUnsupportedArrayType() throws IOException {
+    ConfigSource configSource = createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT);
+    setColumnOption(configSource, "_c0", "ARRAY<INT>");
+    File inputFile = createInputFile(testFolder, "_c0:string", "[1]");
+
+    PartialExecutionException partialExecutionException =
+        Assert.assertThrows(
+            PartialExecutionException.class,
+            () -> embulk.runOutput(configSource, inputFile.toPath()));
+    SQLException mainException =
+        (SQLException)
+            partialExecutionException.getCause().getCause().getCause().getCause().getCause();
+    String errorMsg = mainException.getMessage();
+    Assert.assertTrue(errorMsg, errorMsg.contains("cannot cast \"STRING\" to \"ARRAY<INT>\""));
+    Assert.assertTrue(errorMsg, errorMsg.contains("COPY INTO"));
+  }
+
+  @Test
+  public void testUnsupportedMapType() throws IOException {
+    ConfigSource configSource = createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT);
+    setColumnOption(configSource, "_c0", "MAP<INT, INT>");
+    File inputFile = createInputFile(testFolder, "_c0:string", "{ 1 : 3  }");
+
+    PartialExecutionException partialExecutionException =
+        Assert.assertThrows(
+            PartialExecutionException.class,
+            () -> embulk.runOutput(configSource, inputFile.toPath()));
+    SQLException mainException =
+        (SQLException)
+            partialExecutionException.getCause().getCause().getCause().getCause().getCause();
+    String errorMsg = mainException.getMessage();
+    Assert.assertTrue(errorMsg, errorMsg.contains("cannot cast \"STRING\" to \"MAP<INT, INT>\""));
+    Assert.assertTrue(errorMsg, errorMsg.contains("COPY INTO"));
+  }
+
+  @Test
+  public void testUnsupportedStructType() throws IOException {
+    ConfigSource configSource = createPluginConfigSource(AbstractJdbcOutputPlugin.Mode.INSERT);
+    setColumnOption(configSource, "_c0", "STRUCT<price:INT>");
+    File inputFile = createInputFile(testFolder, "_c0:string", "\"{ \"\"price\"\": 0}\"");
+
+    PartialExecutionException partialExecutionException =
+        Assert.assertThrows(
+            PartialExecutionException.class,
+            () -> embulk.runOutput(configSource, inputFile.toPath()));
+    SQLException mainException =
+        (SQLException)
+            partialExecutionException.getCause().getCause().getCause().getCause().getCause();
+    String errorMsg = mainException.getMessage();
+    Assert.assertTrue(
+        errorMsg, errorMsg.contains("cannot cast \"STRING\" to \"STRUCT<PRICE: INT>\""));
+    Assert.assertTrue(errorMsg, errorMsg.contains("COPY INTO"));
+  }
 }
