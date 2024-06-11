@@ -1,0 +1,27 @@
+
+in:
+  type: file
+  path_prefix: ./example/data.tsv
+  parser:
+    type: csv
+    delimiter: "\t"
+    skip_header_lines: 0
+    null_string: ""
+    columns:
+      - { name: id, type: long }
+      - { name: description, type: string }
+      - { name: name, type: string }
+      - { name: t, type: timestamp, format: "%Y-%m-%d %H:%M:%S %z"}
+      - { name: payload, type: json}
+    stop_on_invalid_record: true
+
+out:
+  type: databricks
+  server_host_name: <YOUR_DATABRICKS_SERVER_HOSTNAME>
+  http_path: <YOUR_DATABRICKS_HTTP_PATH>
+  personal_access_token: <YOUR_DATABRICKS_PERSONAL_ACCESS_TOKEN>
+  catalog_name: <YOUR_DATABRICKS_CATALOG_NAME>
+  schema_name: <YOUR_DATABRICKS_SCHEMA_NAME>
+  table: <YOUR_DATABRICKS_TABLE>
+  mode: insert
+  default_timezone: UTC

@@ -1,0 +1,39 @@
+# This is a Gradle generated file for dependency locking.
+# Manual edits can break the build and are not advised.
+# This file is expected to be part of source control.
+com.databricks:databricks-jdbc:2.6.36
+com.databricks:databricks-sdk-java:0.20.0
+com.fasterxml.jackson.core:jackson-annotations:2.6.7
+com.fasterxml.jackson.core:jackson-core:2.6.7
+com.fasterxml.jackson.core:jackson-databind:2.6.7.5
+com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.6.7
+com.google.auth:google-auth-library-credentials:1.20.0
+com.google.auth:google-auth-library-oauth2-http:1.20.0
+com.google.auto.value:auto-value-annotations:1.10.4
+com.google.code.findbugs:jsr305:3.0.2
+com.google.code.gson:gson:2.10.1
+com.google.errorprone:error_prone_annotations:2.18.0
+com.google.guava:failureaccess:1.0.1
+com.google.guava:guava:32.0.0-android
+com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava
+com.google.http-client:google-http-client-gson:1.43.3
+com.google.http-client:google-http-client:1.43.3
+com.google.j2objc:j2objc-annotations:2.8
+commons-codec:commons-codec:1.11
+commons-io:commons-io:2.13.0
+commons-logging:commons-logging:1.2
+io.grpc:grpc-context:1.27.2
+io.opencensus:opencensus-api:0.31.1
+io.opencensus:opencensus-contrib-http-util:0.31.1
+javax.validation:validation-api:1.1.0.Final
+org.apache.httpcomponents:httpclient:4.5.14
+org.apache.httpcomponents:httpcore:4.4.16
+org.checkerframework:checker-qual:3.33.0
+org.embulk:embulk-output-jdbc:0.10.5
+org.embulk:embulk-output-postgresql:0.10.5
+org.embulk:embulk-util-config:0.3.4
+org.embulk:embulk-util-json:0.3.0
+org.embulk:embulk-util-retryhelper:0.8.2
+org.embulk:embulk-util-rubytime:0.3.3
+org.embulk:embulk-util-timestamp:0.2.2
+org.ini4j:ini4j:0.5.4
