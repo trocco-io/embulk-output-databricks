@@ -91,6 +91,7 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     props.put("SSL", "1");
     props.put("ConnCatalog", t.getCatalogName());
     props.put("ConnSchema", t.getSchemaName());
+    props.putAll(t.getOptions());
     logConnectionProperties(url, props);
     return new DatabricksOutputConnector(
         url, props, t.getTransactionIsolation(), t.getCatalogName(), t.getSchemaName());
