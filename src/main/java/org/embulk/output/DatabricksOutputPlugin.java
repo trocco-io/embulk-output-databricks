@@ -52,6 +52,10 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     @Config("delete_stage_on_error")
     @ConfigDefault("false")
     public boolean getDeleteStageOnError();
+
+    @Config("user_agent")
+    @ConfigDefault("null")
+    public Optional<Map<String, String>> getUserAgent();
   }
 
   @Override
@@ -92,6 +96,14 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     props.put("ConnCatalog", t.getCatalogName());
     props.put("ConnSchema", t.getSchemaName());
     props.putAll(t.getOptions());
+    // overwrite UserAgentEntry property if the same property is set in options
+    if (t.getUserAgent().isPresent()) {
+      String product_name = t.getUserAgent().get().get("product_name");
+      String product_version = t.getUserAgent().get().get("product_version");
+
+      props.put("UserAgentEntry", product_name + "/" + product_version);
+    }
+
     logConnectionProperties(url, props);
     return new DatabricksOutputConnector(
         url, props, t.getTransactionIsolation(), t.getCatalogName(), t.getSchemaName());
