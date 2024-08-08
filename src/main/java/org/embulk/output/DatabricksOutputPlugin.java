@@ -15,6 +15,7 @@ import org.embulk.output.jdbc.*;
 import org.embulk.spi.Schema;
 import org.embulk.util.config.Config;
 import org.embulk.util.config.ConfigDefault;
+import org.embulk.util.config.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,8 +55,18 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     public boolean getDeleteStageOnError();
 
     @Config("user_agent")
-    @ConfigDefault("null")
-    public Optional<Map<String, String>> getUserAgent();
+    @ConfigDefault("{}")
+    public Optional<UserAgentEntry> getUserAgent();
+
+    public interface UserAgentEntry extends Task {
+      @Config("product_name")
+      @ConfigDefault("\"unknown\"")
+      public String getProductName();
+
+      @Config("product_version")
+      @ConfigDefault("\"0.0.0\"")
+      public String getProductVersion();
+    }
   }
 
   @Override
@@ -98,8 +109,8 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     props.putAll(t.getOptions());
     // overwrite UserAgentEntry property if the same property is set in options
     if (t.getUserAgent().isPresent()) {
-      String product_name = t.getUserAgent().get().get("product_name");
-      String product_version = t.getUserAgent().get().get("product_version");
+      String product_name = t.getUserAgent().get().getProductName();
+      String product_version = t.getUserAgent().get().getProductVersion();
 
       props.put("UserAgentEntry", product_name + "/" + product_version);
     }

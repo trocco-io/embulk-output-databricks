@@ -18,8 +18,8 @@ public class DatabricksAPIClient {
   }
 
   private static void setUserAgent(DatabricksOutputPlugin.DatabricksPluginTask task) {
-    String name = task.getUserAgent().get().get("product_name");
-    String version = task.getUserAgent().get().get("product_version");
+    String name = task.getUserAgent().get().getProductName();
+    String version = task.getUserAgent().get().getProductVersion();
 
     UserAgent.withProduct(name, version);
   }
