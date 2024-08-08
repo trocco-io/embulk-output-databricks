@@ -12,12 +12,12 @@ import org.embulk.output.DatabricksOutputPlugin;
 
 public class DatabricksAPIClient {
   public static DatabricksAPIClient create(DatabricksOutputPlugin.DatabricksPluginTask task) {
-    SetUserAgent(task);
+    setUserAgent(task);
 
     return new DatabricksAPIClient(createDatabricksConfig(task));
   }
 
-  private static void SetUserAgent(DatabricksOutputPlugin.DatabricksPluginTask task) {
+  private static void setUserAgent(DatabricksOutputPlugin.DatabricksPluginTask task) {
     String name = task.getUserAgent().get().get("product_name");
     String version = task.getUserAgent().get().get("product_version");
 
