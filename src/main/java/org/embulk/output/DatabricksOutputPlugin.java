@@ -56,7 +56,7 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
 
     @Config("user_agent")
     @ConfigDefault("{}")
-    public Optional<UserAgentEntry> getUserAgent();
+    public UserAgentEntry getUserAgentEntry();
 
     public interface UserAgentEntry extends Task {
       @Config("product_name")
@@ -108,9 +108,9 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     props.put("ConnSchema", t.getSchemaName());
     props.putAll(t.getOptions());
     // overwrite UserAgentEntry property if the same property is set in options
-    if (t.getUserAgent().isPresent()) {
-      String product_name = t.getUserAgent().get().getProductName();
-      String product_version = t.getUserAgent().get().getProductVersion();
+    if (t.getUserAgentEntry() != null) {
+      String product_name = t.getUserAgentEntry().getProductName();
+      String product_version = t.getUserAgentEntry().getProductVersion();
 
       props.put("UserAgentEntry", product_name + "/" + product_version);
     }
