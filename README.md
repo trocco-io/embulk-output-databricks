@@ -14,7 +14,12 @@ Databricks output plugin for Embulk loads records to Databricks Delta Table.
 - **options**: extra JDBC properties (hash, default: {})
 - **server_hostname**: The Databricks compute resource’s Server Hostname value, see [Compute settings for the Databricks JDBC Driver](https://docs.databricks.com/en/integrations/jdbc/compute.html). (string, required)
 - **http_path**: The Databricks compute resource’s HTTP Path value, see [Compute settings for the Databricks JDBC Driver](https://docs.databricks.com/en/integrations/jdbc/compute.html). (string, required)
-- **personal_access_token**: The Databaricks personal_access_token, see [Authentication settings for the Databricks JDBC Driver](https://docs.databricks.com/en/integrations/jdbc/authentication.html#authentication-pat). (string, required)
+- **auth_type**: The Databricks authentication type, personal access token (PAT)-based or machine-to-machine (M2M) authentication. (`pat`, `oauth-m2m`, default: `pat`)
+- If **auth_type** is `pat`,
+  - **personal_access_token**: The Databaricks personal_access_token, see [Authentication settings for the Databricks JDBC Driver](https://docs.databricks.com/en/integrations/jdbc/authentication.html#authentication-pat). (string, required)
+- If **auth_type** is `m2m-auth`,
+  - **oauth2_client_id**: The Databaricks oauth2_client_id, see [Use a service principal to authenticate with Databricks](https://docs.databricks.com/en/dev-tools/auth/oauth-m2m.html). (string, required)
+  - **oauth2_client_secret**: The Databaricks oauth2_client_secret, see [Use a service principal to authenticate with Databricks](https://docs.databricks.com/en/dev-tools/auth/oauth-m2m.html). (string, required)
 - **catalog_name**: destination catalog name (string, required)
 - **schema_name**: destination schema name (string, required)
 - **table**: destination table name (string, required)

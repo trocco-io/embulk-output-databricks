@@ -7,10 +7,11 @@ import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
-import org.embulk.output.DatabricksOutputPlugin;
+import org.embulk.config.ConfigException;
+import org.embulk.output.DatabricksOutputPlugin.DatabricksPluginTask;
 
 public class DatabricksAPIClient {
-  public static DatabricksAPIClient create(DatabricksOutputPlugin.DatabricksPluginTask task) {
+  public static DatabricksAPIClient create(DatabricksPluginTask task) {
     return new DatabricksAPIClient(createDatabricksConfig(task));
   }
 
@@ -41,11 +42,22 @@ public class DatabricksAPIClient {
     workspaceClient.files().delete(filePath);
   }
 
-  public static DatabricksConfig createDatabricksConfig(
-      DatabricksOutputPlugin.DatabricksPluginTask task) {
-    return new DatabricksConfig()
-        .setHost(task.getServerHostname())
-        .setToken(task.getPersonalAccessToken());
+  public static DatabricksConfig createDatabricksConfig(DatabricksPluginTask task) {
+    DatabricksConfig config = new DatabricksConfig().setHost(task.getServerHostname());
+    String authType = task.getAuthType();
+    config.setAuthType(authType);
+    switch (authType) {
+      case "pat":
+        config.setToken(DatabricksPluginTask.fetchPersonalAccessToken(task));
+        break;
+      case "oauth-m2m":
+        config.setClientId(DatabricksPluginTask.fetchOauth2ClientId(task));
+        config.setClientSecret(DatabricksPluginTask.fetchOauth2ClientSecret(task));
+        break;
+      default:
+        throw new ConfigException(String.format("unknown auth_type '%s'", authType));
+    }
+    return config;
   }
 
   public static String createFilePath(
