@@ -99,6 +99,9 @@ gem {
     homepage = "https://github.com/trocco-io/embulk-output-databricks"
     licenses = [ "MIT" ]
 }
+test {
+    maxParallelForks 1
+}
 spotless {
     java {
         importOrder()

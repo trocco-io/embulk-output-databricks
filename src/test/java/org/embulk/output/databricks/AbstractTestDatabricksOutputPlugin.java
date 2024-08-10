@@ -51,6 +51,7 @@ public abstract class AbstractTestDatabricksOutputPlugin {
       return;
     }
     ConnectionUtil.dropAllTemporaryTables();
+    DatabricksAPIClient.resetFetchCurrentTransactionVolumeName();
     DatabricksApiClientUtil.deleteAllTemporaryStagingVolumes();
   }
 
