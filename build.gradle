@@ -27,30 +27,20 @@ version = {
 }()
 
 dependencies {
-    compileOnly "org.embulk:embulk-api:0.10.31"
-    compileOnly "org.embulk:embulk-spi:0.10.31"
+    def embulkVersion = "0.10.31"
+    compileOnly("org.embulk:embulk-api:${embulkVersion}")
+    compileOnly("org.embulk:embulk-spi:${embulkVersion}")
 
-    compile("org.embulk:embulk-util-config:0.3.0") {
-        // They conflict with embulk-core. They are once excluded here,
-        // and added explicitly with versions exactly the same with embulk-core:0.10.19.
-        exclude group: "com.fasterxml.jackson.core", module: "jackson-annotations"
-        exclude group: "com.fasterxml.jackson.core", module: "jackson-core"
+    def jdbcVersion = "0.10.5"
+    compile("org.embulk:embulk-output-jdbc:$jdbcVersion")
+    compile("org.embulk:embulk-output-postgresql:$jdbcVersion")
+
+    compile project(path: ":shadow-databricks-jdbc", configuration: "shadow")
+    compile("com.databricks:databricks-sdk-java:0.20.0") {
+        exclude group: "org.slf4j", module: "slf4j-api"
         exclude group: "com.fasterxml.jackson.core", module: "jackson-databind"
-        exclude group: "com.fasterxml.jackson.datatype", module: "jackson-datatype-jdk8"
-        exclude group: "javax.validation", module: "validation-api"
     }
 
-    // They are once excluded from transitive dependencies of other dependencies,
-    // and added explicitly with versions exactly the same with embulk-core:0.10.19.
-    compile "com.fasterxml.jackson.core:jackson-annotations:2.6.7"
-    compile "com.fasterxml.jackson.core:jackson-core:2.6.7"
-    compile "com.fasterxml.jackson.core:jackson-databind:2.6.7"
-    compile "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.6.7"
-    compile "javax.validation:validation-api:1.1.0.Final"
-
-    compile("org.embulk:embulk-util-json:0.1.0") {
-        exclude group: "org.msgpack", module: "msgpack-core"  // Included in embulk-api.
-    }
     testImplementation "junit:junit:4.+"
     testImplementation "org.embulk:embulk-junit4:0.10.31"
     testImplementation "org.embulk:embulk-core:0.10.31"
@@ -59,45 +49,19 @@ dependencies {
     testImplementation "org.embulk:embulk-input-file:0.10.31"
     testImplementation "org.embulk:embulk-parser-csv:0.10.31"
 
-    compile "org.embulk:embulk-output-jdbc:0.10.5"
-    compile "org.embulk:embulk-output-postgresql:0.10.5"
-    compile project(path: ":shadow-databricks-jdbc", configuration: "shadow")
-    compile("com.databricks:databricks-sdk-java:0.20.0") {
-        exclude group: "org.slf4j", module: "slf4j-api"
-        exclude group: "com.fasterxml.jackson.core", module: "jackson-annotations"
-        exclude group: "com.fasterxml.jackson.core", module: "jackson-core"
-        exclude group: "com.fasterxml.jackson.core", module: "jackson-databind"
-        exclude group: "com.fasterxml.jackson.datatype", module: "jackson-datatype-jdk8"
-        exclude group: "javax.validation", module: "validation-api"
-    }
-
     // Supress following logs in gradlew test.
     // SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
     // SLF4J: Defaulting to no-operation (NOP) logger implementation
     // SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
     testImplementation("org.slf4j:slf4j-simple:1.7.30")
 }
+
 embulkPlugin {
     mainClass = "org.embulk.output.DatabricksOutputPlugin"
     category = "output"
     type = "databricks"
 }
-// This Gradle plugin's POM dependency modification works for "maven-publish" tasks.
-//
-// Note that "uploadArchives" is no longer supported. It is deprecated in Gradle 6 to be removed in Gradle 7.
-// https://github.com/gradle/gradle/issues/3003#issuecomment-495025844
-publishing {
-    publications {
-        embulkPluginMaven(MavenPublication) {  // Publish it with "publishEmbulkPluginMavenPublicationToMavenRepository".
-            from components.java  // Must be "components.java". The dependency modification works only for it.
-        }
-    }
-    repositories {
-        maven {
-            url = "${project.buildDir}/mavenPublishLocal"
-        }
-    }
-}
+
 gem {
     from("LICENSE.txt")
     authors = [ "" ]
@@ -106,9 +70,11 @@ gem {
     homepage = "https://github.com/trocco-io/embulk-output-databricks"
     licenses = [ "MIT" ]
 }
+
 test {
     maxParallelForks 1
 }
+
 spotless {
     java {
         importOrder()
