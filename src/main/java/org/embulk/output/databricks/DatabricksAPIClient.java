@@ -62,6 +62,10 @@ public class DatabricksAPIClient {
     return currentTransactionVolumeName;
   }
 
+  public static void resetFetchCurrentTransactionVolumeName() {
+    currentTransactionVolumeName = null;
+  }
+
   public static String createRandomUnityCatalogObjectName() {
     // https://docs.databricks.com/en/sql/language-manual/sql-ref-names.html
     // https://docs.databricks.com/en/sql/language-manual/sql-ref-identifiers.html
