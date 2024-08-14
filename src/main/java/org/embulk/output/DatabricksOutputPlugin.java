@@ -57,16 +57,19 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     @Config("user_agent")
     @ConfigDefault("{}")
     public UserAgentEntry getUserAgentEntry();
+  }
 
-    public interface UserAgentEntry extends Task {
-      @Config("product_name")
-      @ConfigDefault("\"unknown\"")
-      public String getProductName();
+  public interface UserAgentEntry extends Task {
+    String defaultProductName = "unknown";
+    String defaultProductVersion = "0.0.0";
 
-      @Config("product_version")
-      @ConfigDefault("\"0.0.0\"")
-      public String getProductVersion();
-    }
+    @Config("product_name")
+    @ConfigDefault("\"unknown\"")
+    public String getProductName();
+
+    @Config("product_version")
+    @ConfigDefault("\"0.0.0\"")
+    public String getProductVersion();
   }
 
   @Override
@@ -107,12 +110,13 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     props.put("ConnCatalog", t.getCatalogName());
     props.put("ConnSchema", t.getSchemaName());
     props.putAll(t.getOptions());
-    // overwrite UserAgentEntry property if the same property is set in options
-    if (t.getUserAgentEntry() != null) {
-      String product_name = t.getUserAgentEntry().getProductName();
-      String product_version = t.getUserAgentEntry().getProductVersion();
 
-      props.put("UserAgentEntry", product_name + "/" + product_version);
+    String productName = t.getUserAgentEntry().getProductName();
+    String productVersion = t.getUserAgentEntry().getProductVersion();
+    boolean isSetUserAgentEntryInOptions = props.containsKey("UserAgentEntry");
+    // overwrite UserAgentEntry property if the same property is set in options
+    if (isSetUserAgentEntry(isSetUserAgentEntryInOptions, productName, productVersion)) {
+      props.put("UserAgentEntry", productName + "/" + productVersion);
     }
 
     logConnectionProperties(url, props);
@@ -253,5 +257,10 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     } else {
       return Optional.of(new JdbcSchema(columns));
     }
+  }
+
+  private boolean isSetUserAgentEntry(boolean isSetUserAgentEntryInOptions, String productName, String productVersion) {
+    boolean isDefaultUserAgent = (productName.equals(UserAgentEntry.defaultProductName) || productVersion.equals(UserAgentEntry.defaultProductVersion));
+    return !(isSetUserAgentEntryInOptions && isDefaultUserAgent);
   }
 }
