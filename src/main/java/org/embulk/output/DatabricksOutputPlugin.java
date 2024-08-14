@@ -187,11 +187,11 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
 
   @Override
   protected void logConnectionProperties(String url, Properties props) {
-    String[] maskedKeys = {"PWD", "OAuth2Secret"};
+    List<String> maskedKeys = Arrays.asList("PWD", "OAuth2Secret");
     Properties maskedProps = new Properties();
     for (Object keyObj : props.keySet()) {
       String key = (String) keyObj;
-      String maskedVal = Arrays.asList(maskedKeys).contains(key) ? "***" : props.getProperty(key);
+      String maskedVal = maskedKeys.contains(key) ? "***" : props.getProperty(key);
       maskedProps.setProperty(key, maskedVal);
     }
     super.logConnectionProperties(url, maskedProps);
