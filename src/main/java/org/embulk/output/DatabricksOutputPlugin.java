@@ -62,7 +62,7 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
       @Config("product_name")
       @ConfigDefault("\"unknown\"")
       public String getProductName();
-  
+
       @Config("product_version")
       @ConfigDefault("\"0.0.0\"")
       public String getProductVersion();
