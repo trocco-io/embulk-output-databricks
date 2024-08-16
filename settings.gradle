@@ -1,1 +1,2 @@
 rootProject.name = 'embulk-output-databricks'
+include "shadow-databricks-jdbc"
