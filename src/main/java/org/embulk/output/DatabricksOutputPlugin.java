@@ -15,6 +15,7 @@ import org.embulk.output.jdbc.*;
 import org.embulk.spi.Schema;
 import org.embulk.util.config.Config;
 import org.embulk.util.config.ConfigDefault;
+import org.embulk.util.config.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +53,20 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     @Config("delete_stage_on_error")
     @ConfigDefault("false")
     public boolean getDeleteStageOnError();
+
+    @Config("user_agent")
+    @ConfigDefault("{}")
+    public UserAgentEntry getUserAgentEntry();
+
+    public interface UserAgentEntry extends Task {
+      @Config("product_name")
+      @ConfigDefault("\"unknown\"")
+      public String getProductName();
+
+      @Config("product_version")
+      @ConfigDefault("\"0.0.0\"")
+      public String getProductVersion();
+    }
   }
 
   @Override
@@ -92,6 +107,12 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     props.put("ConnCatalog", t.getCatalogName());
     props.put("ConnSchema", t.getSchemaName());
     props.putAll(t.getOptions());
+
+    // overwrite UserAgentEntry property if the same property is set in options
+    String productName = t.getUserAgentEntry().getProductName();
+    String productVersion = t.getUserAgentEntry().getProductVersion();
+    props.put("UserAgentEntry", productName + "/" + productVersion);
+
     logConnectionProperties(url, props);
     return new DatabricksOutputConnector(
         url, props, t.getTransactionIsolation(), t.getCatalogName(), t.getSchemaName());

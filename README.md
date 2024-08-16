@@ -12,6 +12,9 @@ Databricks output plugin for Embulk loads records to Databricks Delta Table.
 
 - **driver_path**: path to the jar file of the JDBC driver. If not set, [the bundled JDBC driver](https://docs.databricks.com/en/integrations/jdbc/index.html) will be used. (string, optional)
 - **options**: extra JDBC properties (hash, default: {})
+- **user_agent**: set user agent property to JDBC and SDK connection. If 'UserAgentEntry' property is specified in the **options**, it will be overwritten by this value. (hash, optional)
+  - **product_name**: product name of user agent (string, default: "unknown")
+  - **product_version**: product version of user agent (string, default: "0.0.0")
 - **server_hostname**: The Databricks compute resource’s Server Hostname value, see [Compute settings for the Databricks JDBC Driver](https://docs.databricks.com/en/integrations/jdbc/compute.html). (string, required)
 - **http_path**: The Databricks compute resource’s HTTP Path value, see [Compute settings for the Databricks JDBC Driver](https://docs.databricks.com/en/integrations/jdbc/compute.html). (string, required)
 - **personal_access_token**: The Databaricks personal_access_token, see [Authentication settings for the Databricks JDBC Driver](https://docs.databricks.com/en/integrations/jdbc/authentication.html#authentication-pat). (string, required)
