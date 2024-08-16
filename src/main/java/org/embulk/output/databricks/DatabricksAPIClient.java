@@ -2,6 +2,7 @@ package org.embulk.output.databricks;
 
 import com.databricks.sdk.WorkspaceClient;
 import com.databricks.sdk.core.DatabricksConfig;
+import com.databricks.sdk.core.UserAgent;
 import com.databricks.sdk.service.catalog.VolumeType;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
@@ -12,7 +13,16 @@ import org.embulk.output.DatabricksOutputPlugin.DatabricksPluginTask;
 
 public class DatabricksAPIClient {
   public static DatabricksAPIClient create(DatabricksPluginTask task) {
+    setUserAgent(task);
+
     return new DatabricksAPIClient(createDatabricksConfig(task));
+  }
+
+  private static void setUserAgent(DatabricksPluginTask task) {
+    String name = task.getUserAgentEntry().getProductName();
+    String version = task.getUserAgentEntry().getProductVersion();
+
+    UserAgent.withProduct(name, version);
   }
 
   private final WorkspaceClient workspaceClient;
