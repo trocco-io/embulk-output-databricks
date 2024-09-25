@@ -33,25 +33,36 @@ public class ConnectionUtil {
 
   public static void dropAllTemporaryTables() {
     ConfigUtil.TestTask t = ConfigUtil.createTestTask();
+    try (Connection conn = connectByTestTask()) {
+      dropAllTemporaryTables(conn, t.getCatalogName(), t.getSchemaName());
+      dropAllTemporaryTables(conn, t.getCatalogName(), t.getNonAsciiSchemaName());
+      dropAllTemporaryTables(conn, t.getNonAsciiCatalogName(), t.getSchemaName());
+      dropAllTemporaryTables(conn, t.getNonAsciiCatalogName(), t.getNonAsciiSchemaName());
+    } catch (SQLException | ClassNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private static void dropAllTemporaryTables(
+      Connection conn, String catalogName, String schemaName) {
+    ConfigUtil.TestTask t = ConfigUtil.createTestTask();
     String tableNamesSQL =
         String.format(
             "select table_name from system.information_schema.tables where table_catalog = '%s' AND table_schema = '%s' AND table_name LIKE '%s%%'",
-            t.getCatalogName(), t.getSchemaName(), t.getTablePrefix());
-    runQuery(tableNamesSQL)
+            catalogName, schemaName, t.getTablePrefix());
+    runQuery(conn, tableNamesSQL)
         .forEach(
             x -> {
               String tableName = (String) x.get("table_name");
               String dropSql =
                   String.format(
-                      "drop table if exists `%s`.`%s`.`%s`",
-                      t.getCatalogName(), t.getSchemaName(), tableName);
-              run(dropSql);
+                      "drop table if exists `%s`.`%s`.`%s`", catalogName, schemaName, tableName);
+              run(conn, dropSql);
             });
   }
 
-  public static List<Map<String, Object>> runQuery(String query) {
-    try (Connection conn = connectByTestTask();
-        Statement stmt = conn.createStatement();
+  public static List<Map<String, Object>> runQuery(Connection conn, String query) {
+    try (Statement stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery(query)) {
       List<Map<String, Object>> result = new ArrayList<>();
       while (rs.next()) {
@@ -62,15 +73,30 @@ public class ConnectionUtil {
         result.add(resMap);
       }
       return result;
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static List<Map<String, Object>> runQuery(String query) {
+    try (Connection conn = connectByTestTask()) {
+      return runQuery(conn, query);
     } catch (SQLException | ClassNotFoundException e) {
       throw new RuntimeException(e);
     }
   }
 
-  public static Boolean run(String query) {
-    try (Connection conn = connectByTestTask();
-        Statement stmt = conn.createStatement()) {
+  public static Boolean run(Connection conn, String query) {
+    try (Statement stmt = conn.createStatement()) {
       return stmt.execute(query);
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static Boolean run(String query) {
+    try (Connection conn = connectByTestTask()) {
+      return run(conn, query);
     } catch (SQLException | ClassNotFoundException e) {
       throw new RuntimeException(e);
     }
