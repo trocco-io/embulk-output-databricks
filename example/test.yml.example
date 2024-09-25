@@ -1,9 +1,11 @@
-# The catalog_name and schema_name must be created in advance.
+# The catalog_name.schema_name, catalog_name.non_ascii_schema_name, non_ascii_catalog_name.non_ascii_schema_name and non_ascii_catalog_name.schema_name must be created in advance.
 
 server_hostname: 
 http_path: 
 personal_access_token: 
 catalog_name: 
 schema_name: 
+non_ascii_schema_name:
+non_ascii_catalog_name:
 table_prefix:
 staging_volume_name_prefix:

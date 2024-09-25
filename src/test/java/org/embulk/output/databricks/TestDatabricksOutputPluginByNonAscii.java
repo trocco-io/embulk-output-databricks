@@ -1,6 +1,10 @@
 package org.embulk.output.databricks;
 
 import static org.embulk.output.databricks.util.ConfigUtil.createPluginConfigSource;
+import static org.embulk.output.databricks.util.ConfigUtil.setNonAsciiCatalogName;
+import static org.embulk.output.databricks.util.ConfigUtil.setNonAsciiSchemaName;
+import static org.embulk.output.databricks.util.ConfigUtil.setNonAsciiStagingVolumeNamePrefix;
+import static org.embulk.output.databricks.util.ConfigUtil.setNonAsciiTable;
 import static org.embulk.output.databricks.util.ConnectionUtil.quotedDstTableName;
 import static org.embulk.output.databricks.util.ConnectionUtil.run;
 import static org.embulk.output.databricks.util.ConnectionUtil.runQuery;
@@ -14,6 +18,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.embulk.config.ConfigSource;
+import org.embulk.exec.PartialExecutionException;
 import org.embulk.output.databricks.util.ConfigUtil;
 import org.embulk.output.jdbc.AbstractJdbcOutputPlugin.Mode;
 import org.junit.Assert;
@@ -71,6 +76,35 @@ public class TestDatabricksOutputPluginByNonAscii extends AbstractTestDatabricks
     Assert.assertEquals(1, results.size());
     Assert.assertEquals("test0", results.get(0).get("あ"));
     Assert.assertEquals("hogeあtest1", results.get(0).get("い"));
+  }
+
+  @Test
+  public void testCatalogName() throws Exception {
+    ConfigSource configSource = createPluginConfigSource(Mode.INSERT);
+    setNonAsciiCatalogName(configSource);
+    runOutputAndAssertResult(configSource);
+  }
+
+  @Test
+  public void testSchemaName() throws Exception {
+    ConfigSource configSource = createPluginConfigSource(Mode.INSERT);
+    setNonAsciiSchemaName(configSource);
+    Assert.assertThrows(
+        PartialExecutionException.class, () -> runOutputAndAssertResult(configSource));
+  }
+
+  @Test
+  public void testTableName() throws Exception {
+    ConfigSource configSource = createPluginConfigSource(Mode.INSERT);
+    setNonAsciiTable(configSource);
+    runOutputAndAssertResult(configSource);
+  }
+
+  @Test
+  public void testStagingVolumeNamePrefix() throws Exception {
+    ConfigSource configSource = createPluginConfigSource(Mode.INSERT);
+    setNonAsciiStagingVolumeNamePrefix(configSource);
+    runOutputAndAssertResult(configSource);
   }
 
   private void setupForMerge(ConfigSource configSource, boolean hasPrimaryKey) {
