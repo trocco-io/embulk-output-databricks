@@ -89,6 +89,16 @@ public class ConfigUtil {
     return CONFIG_MAPPER.map(configSource, DatabricksOutputPlugin.DatabricksPluginTask.class);
   }
 
+  public static ConfigSource setMergeKeys(ConfigSource configSource, String... mergeKeys) {
+    configSource.set("merge_keys", mergeKeys);
+    return configSource;
+  }
+
+  public static ConfigSource setMergeRule(ConfigSource configSource, String... mergeRule) {
+    configSource.set("merge_rule", mergeRule);
+    return configSource;
+  }
+
   public static ConfigSource setColumnOption(
       ConfigSource configSource, String columnName, String type) {
     return setColumnOption(configSource, columnName, type, null, null, null);

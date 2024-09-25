@@ -18,7 +18,7 @@ public class TestDatabricksOutputConnection {
       TableIdentifier tableIdentifier = new TableIdentifier("database", "schemaName", "tableName");
       String actual = conn.buildCopySQL(tableIdentifier, "filePath", buildJdbcSchema());
       String expected =
-          "COPY INTO `database`.`schemaName`.`tableName` FROM ( SELECT _c0::string col0 , _c1::bigint col1 FROM \"filePath\" ) FILEFORMAT = CSV  FORMAT_OPTIONS ( 'nullValue' = '\\\\N' ,  'delimiter' = '\\t' )";
+          "COPY INTO `database`.`schemaName`.`tableName` FROM ( SELECT _c0::string `col0` , _c1::bigint `col1` FROM \"filePath\" ) FILEFORMAT = CSV  FORMAT_OPTIONS ( 'nullValue' = '\\\\N' ,  'delimiter' = '\\t' )";
       Assert.assertEquals(expected, actual);
     }
   }
