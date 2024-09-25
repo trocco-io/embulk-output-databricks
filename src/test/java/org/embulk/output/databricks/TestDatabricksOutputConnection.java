@@ -18,7 +18,7 @@ public class TestDatabricksOutputConnection {
       TableIdentifier tableIdentifier = new TableIdentifier("database", "schemaName", "tableName");
       String actual = conn.buildCopySQL(tableIdentifier, "filePath", buildJdbcSchema());
       String expected =
-          "COPY INTO `database`.`schemaName`.`tableName` FROM ( SELECT _c0::string `col0` , _c1::bigint `col1` FROM \"filePath\" ) FILEFORMAT = CSV  FORMAT_OPTIONS ( 'nullValue' = '\\\\N' ,  'delimiter' = '\\t' )";
+          "COPY INTO `database`.`schemaName`.`tableName` FROM ( SELECT _c0::string `あ` , _c1::bigint ```` FROM \"filePath\" ) FILEFORMAT = CSV  FORMAT_OPTIONS ( 'nullValue' = '\\\\N' ,  'delimiter' = '\\t' )";
       Assert.assertEquals(expected, actual);
     }
   }
@@ -45,7 +45,7 @@ public class TestDatabricksOutputConnection {
         buildMergeRules("col0 = CONCAT(T.col0, 'test')", "col1 = T.col1 + S.col1");
     String actual = mergeConfigSQL(new MergeConfig(mergeKeys, mergeRules));
     String expected =
-        "MERGE INTO `database`.`schemaName`.`tableName100` T  USING `database`.`schemaName`.`tableName9` S  ON (T.`col0` = S.`col0` AND T.`col1` = S.`col1`) WHEN MATCHED THEN  UPDATE SET col0 = CONCAT(T.col0, 'test'), col1 = T.col1 + S.col1 WHEN NOT MATCHED THEN INSERT (`col0`, `col1`) VALUES (S.`col0`, S.`col1`);";
+        "MERGE INTO `database`.`schemaName`.`tableName100` T  USING `database`.`schemaName`.`tableName9` S  ON (T.`col0` = S.`col0` AND T.`col1` = S.`col1`) WHEN MATCHED THEN  UPDATE SET col0 = CONCAT(T.col0, 'test'), col1 = T.col1 + S.col1 WHEN NOT MATCHED THEN INSERT (`あ`, ````) VALUES (S.`あ`, S.````);";
     Assert.assertEquals(expected, actual);
   }
 
@@ -55,7 +55,7 @@ public class TestDatabricksOutputConnection {
     Optional<List<String>> mergeRules = Optional.empty();
     String actual = mergeConfigSQL(new MergeConfig(mergeKeys, mergeRules));
     String expected =
-        "MERGE INTO `database`.`schemaName`.`tableName100` T  USING `database`.`schemaName`.`tableName9` S  ON (T.`col0` = S.`col0` AND T.`col1` = S.`col1`) WHEN MATCHED THEN  UPDATE SET `col0` = S.`col0`, `col1` = S.`col1` WHEN NOT MATCHED THEN INSERT (`col0`, `col1`) VALUES (S.`col0`, S.`col1`);";
+        "MERGE INTO `database`.`schemaName`.`tableName100` T  USING `database`.`schemaName`.`tableName9` S  ON (T.`col0` = S.`col0` AND T.`col1` = S.`col1`) WHEN MATCHED THEN  UPDATE SET `あ` = S.`あ`, ```` = S.```` WHEN NOT MATCHED THEN INSERT (`あ`, ````) VALUES (S.`あ`, S.````);";
     Assert.assertEquals(expected, actual);
   }
 
@@ -83,8 +83,8 @@ public class TestDatabricksOutputConnection {
 
   private JdbcSchema buildJdbcSchema() {
     List<JdbcColumn> jdbcColumns = new ArrayList<>();
-    jdbcColumns.add(JdbcColumn.newTypeDeclaredColumn("col0", Types.VARCHAR, "string", true, false));
-    jdbcColumns.add(JdbcColumn.newTypeDeclaredColumn("col1", Types.BIGINT, "bigint", true, false));
+    jdbcColumns.add(JdbcColumn.newTypeDeclaredColumn("あ", Types.VARCHAR, "string", true, false));
+    jdbcColumns.add(JdbcColumn.newTypeDeclaredColumn("`", Types.BIGINT, "bigint", true, false));
     return new JdbcSchema(jdbcColumns);
   }
 
