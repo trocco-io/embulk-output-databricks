@@ -45,7 +45,7 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
     try (ResultSet rs =
         connection
             .getMetaData()
-            .getTables(table.getDatabase(), table.getSchemaName(), table.getTableName(), null)) {
+            .getTables(catalogName, table.getSchemaName(), table.getTableName(), null)) {
       while (rs.next()) {
         if (isAvailableTableMetadataInConnection(rs, table)) {
           return true;
@@ -294,5 +294,9 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
       sb.append(quoteIdentifierString(schema.getColumnName(i)));
     }
     return sb.toString();
+  }
+
+  public String getCatalogName() {
+    return catalogName;
   }
 }
