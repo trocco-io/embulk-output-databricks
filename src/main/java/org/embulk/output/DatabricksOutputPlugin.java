@@ -180,11 +180,12 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
       return Optional.empty();
     }
 
+    DatabricksOutputConnection conn = (DatabricksOutputConnection) connection;
     DatabaseMetaData dbm = connection.getMetaData();
     String escape = dbm.getSearchStringEscape();
 
     ResultSet rs =
-        dbm.getPrimaryKeys(table.getDatabase(), table.getSchemaName(), table.getTableName());
+        dbm.getPrimaryKeys(conn.getCatalogName(), table.getSchemaName(), table.getTableName());
     final HashSet<String> primaryKeysBuilder = new HashSet<>();
     try {
       while (rs.next()) {
@@ -207,7 +208,7 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     // https://docs.databricks.com/en/sql/language-manual/data-types/timestamp-ntz-type.html#notes
     rs =
         dbm.getColumns(
-            JdbcUtils.escapeSearchString(table.getDatabase(), escape),
+            JdbcUtils.escapeSearchString(conn.getCatalogName(), escape),
             JdbcUtils.escapeSearchString(table.getSchemaName(), escape),
             JdbcUtils.escapeSearchString(table.getTableName(), escape),
             null);
