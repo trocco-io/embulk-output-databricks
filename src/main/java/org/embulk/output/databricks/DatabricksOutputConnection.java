@@ -62,6 +62,10 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
     // null
     // and one Databricks connection has multiple available catalogs　(databases).
 
+    // NOTE: maybe this logic is not necessary anymore after this PR:
+    //    https://github.com/trocco-io/embulk-output-databricks/pull/11
+    // But I'm not sure, so I'll keep it for now.
+
     if (tableIdentifier.getDatabase() == null) {
       logger.trace("tableIdentifier.getDatabase() == null, check by instance variable");
       if (!rs.getString("TABLE_CAT").equalsIgnoreCase(catalogName)) {
