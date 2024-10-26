@@ -45,7 +45,7 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
     try (ResultSet rs =
         connection
             .getMetaData()
-            .getTables(table.getDatabase(), table.getSchemaName(), table.getTableName(), null)) {
+            .getTables(catalogName, table.getSchemaName(), table.getTableName(), null)) {
       while (rs.next()) {
         if (isAvailableTableMetadataInConnection(rs, table)) {
           return true;
@@ -61,6 +61,10 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
     // This is because the base embulk jdbc plugin's tableIdentifier.getDatabase() is often returns
     // null
     // and one Databricks connection has multiple available catalogs　(databases).
+
+    // NOTE: maybe this logic is not necessary anymore after this PR:
+    //    https://github.com/trocco-io/embulk-output-databricks/pull/11
+    // But I'm not sure, so I'll keep it for now.
 
     if (tableIdentifier.getDatabase() == null) {
       logger.trace("tableIdentifier.getDatabase() == null, check by instance variable");
@@ -304,5 +308,9 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
       sb.append(quoteIdentifierString(schema.getColumnName(i)));
     }
     return sb.toString();
+  }
+
+  public String getCatalogName() {
+    return catalogName;
   }
 }
