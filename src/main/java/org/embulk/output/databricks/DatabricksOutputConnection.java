@@ -42,58 +42,21 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
   // This is almost copy from JdbcOutputConnection excepting validation of table exists in current
   // schema
   public boolean tableExists(TableIdentifier table) throws SQLException {
-    try (ResultSet rs =
-        connection
-            .getMetaData()
-            .getTables(catalogName, table.getSchemaName(), table.getTableName(), null)) {
-      while (rs.next()) {
-        if (isAvailableTableMetadataInConnection(rs, table)) {
-          return true;
-        }
-      }
-    }
-    return false;
+    return super.tableExists(currentConnectionTableIdentifier(table));
   }
 
-  public boolean isAvailableTableMetadataInConnection(ResultSet rs, TableIdentifier tableIdentifier)
-      throws SQLException {
-    // If unchecked, tables in other catalogs may appear to exist.
-    // This is because the base embulk jdbc plugin's tableIdentifier.getDatabase() is often returns
-    // null
-    // and one Databricks connection has multiple available catalogs　(databases).
-
-    // NOTE: maybe this logic is not necessary anymore after this PR:
-    //    https://github.com/trocco-io/embulk-output-databricks/pull/11
-    // But I'm not sure, so I'll keep it for now.
-
-    if (tableIdentifier.getDatabase() == null) {
-      logger.trace("tableIdentifier.getDatabase() == null, check by instance variable");
-      if (!rs.getString("TABLE_CAT").equalsIgnoreCase(catalogName)) {
-        return false;
-      }
-    }
-    if (tableIdentifier.getSchemaName() == null) {
-      logger.trace("tableIdentifier.getSchemaName() == null, check by instance variable");
-      if (!rs.getString("TABLE_SCHEM").equalsIgnoreCase(schemaName)) {
-        return false;
-      }
-    }
-
-    if (tableIdentifier.getDatabase() != null
-        && !tableIdentifier.getDatabase().equalsIgnoreCase(catalogName)) {
-      logger.error(
-          String.format(
-              "tableIdentifier.getSchemaName() != instance variable. (%s, %s)",
-              tableIdentifier.getDatabase(), catalogName));
-    }
-    if (tableIdentifier.getSchemaName() != null
-        && !tableIdentifier.getSchemaName().equalsIgnoreCase(schemaName)) {
-      logger.error(
-          String.format(
-              "tableIdentifier.getSchemaName() != instance variable. (%s, %s)",
-              tableIdentifier.getSchemaName(), schemaName));
-    }
-    return true;
+  public TableIdentifier currentConnectionTableIdentifier(TableIdentifier tableIdentifier) {
+    // Caution:
+    // JdbcOutputPlugin sometimes uses tableIdentifier whose database variable is null,
+    // which causes unexpected DatabaseMetaData behavior in AbstractJdbcOutputPlugin.
+    // For example, getTables and getColumns search in all catalogs,
+    // not just the one specified by the connection's default value,
+    // and can't search in schemas with multibyte name.
+    // So, if tableIdentifier database variable is null, it will set the connection's default value.
+    return new TableIdentifier(
+        tableIdentifier.getDatabase() != null ? tableIdentifier.getDatabase() : catalogName,
+        tableIdentifier.getSchemaName() != null ? tableIdentifier.getSchemaName() : schemaName,
+        tableIdentifier.getTableName());
   }
 
   @Override
@@ -298,9 +261,5 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
       sb.append(quoteIdentifierString(schema.getColumnName(i)));
     }
     return sb.toString();
-  }
-
-  public String getCatalogName() {
-    return catalogName;
   }
 }

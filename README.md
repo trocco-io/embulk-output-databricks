@@ -78,4 +78,6 @@ $ ./gradlew gem  # -t to watch change of files and rebuild continuously
 
 ## TEST
 
+```
 $ EMBULK_OUTPUT_DATABRICKS_TEST_CONFIG="example/test.yml" ./gradlew test # Create example/test.yml based on example/test.yml.example
+```

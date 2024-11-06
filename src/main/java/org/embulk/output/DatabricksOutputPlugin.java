@@ -1,8 +1,6 @@
 package org.embulk.output;
 
 import java.io.IOException;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import org.embulk.config.ConfigDiff;
@@ -171,86 +169,10 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     super.logConnectionProperties(url, maskedProps);
   }
 
-  // This is almost copy from AbstractJdbcOutputPlugin excepting validation of table exists in
-  // current schema
   public Optional<JdbcSchema> newJdbcSchemaFromTableIfExists(
       JdbcOutputConnection connection, TableIdentifier table) throws SQLException {
-    if (!connection.tableExists(table)) {
-      // DatabaseMetaData.getPrimaryKeys fails if table does not exist
-      return Optional.empty();
-    }
-
-    DatabricksOutputConnection conn = (DatabricksOutputConnection) connection;
-    DatabaseMetaData dbm = connection.getMetaData();
-    String escape = dbm.getSearchStringEscape();
-
-    ResultSet rs =
-        dbm.getPrimaryKeys(conn.getCatalogName(), table.getSchemaName(), table.getTableName());
-    final HashSet<String> primaryKeysBuilder = new HashSet<>();
-    try {
-      while (rs.next()) {
-        if (!((DatabricksOutputConnection) connection)
-            .isAvailableTableMetadataInConnection(rs, table)) {
-          continue;
-        }
-        primaryKeysBuilder.add(rs.getString("COLUMN_NAME"));
-      }
-    } finally {
-      rs.close();
-    }
-    final Set<String> primaryKeys = Collections.unmodifiableSet(primaryKeysBuilder);
-
-    final ArrayList<JdbcColumn> builder = new ArrayList<>();
-    // NOTE: Columns of TIMESTAMP_NTZ, INTERVAL are not included in getColumns result.
-    // This cause runtime sql exception when copy into.
-    // (probably because of unsupported in databricks jdbc)
-    // https://docs.databricks.com/en/sql/language-manual/data-types/interval-type.html
-    // https://docs.databricks.com/en/sql/language-manual/data-types/timestamp-ntz-type.html#notes
-    rs =
-        dbm.getColumns(
-            JdbcUtils.escapeSearchString(conn.getCatalogName(), escape),
-            JdbcUtils.escapeSearchString(table.getSchemaName(), escape),
-            JdbcUtils.escapeSearchString(table.getTableName(), escape),
-            null);
-    try {
-      while (rs.next()) {
-        if (!((DatabricksOutputConnection) connection)
-            .isAvailableTableMetadataInConnection(rs, table)) {
-          continue;
-        }
-        String columnName = rs.getString("COLUMN_NAME");
-        String simpleTypeName = rs.getString("TYPE_NAME").toUpperCase(Locale.ENGLISH);
-        boolean isUniqueKey = primaryKeys.contains(columnName);
-        int sqlType = rs.getInt("DATA_TYPE");
-        int colSize = rs.getInt("COLUMN_SIZE");
-        int decDigit = rs.getInt("DECIMAL_DIGITS");
-        if (rs.wasNull()) {
-          decDigit = -1;
-        }
-        int charOctetLength = rs.getInt("CHAR_OCTET_LENGTH");
-        boolean isNotNull = "NO".equals(rs.getString("IS_NULLABLE"));
-        // rs.getString("COLUMN_DEF") // or null  // TODO
-        builder.add(
-            JdbcColumn.newGenericTypeColumn(
-                columnName,
-                sqlType,
-                simpleTypeName,
-                colSize,
-                decDigit,
-                charOctetLength,
-                isNotNull,
-                isUniqueKey));
-        // We can't get declared column name using JDBC API.
-        // Subclasses need to overwrite it.
-      }
-    } finally {
-      rs.close();
-    }
-    final List<JdbcColumn> columns = Collections.unmodifiableList(builder);
-    if (columns.isEmpty()) {
-      return Optional.empty();
-    } else {
-      return Optional.of(new JdbcSchema(columns));
-    }
+    return super.newJdbcSchemaFromTableIfExists(
+        connection,
+        ((DatabricksOutputConnection) connection).currentConnectionTableIdentifier(table));
   }
 }
