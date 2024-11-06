@@ -1,0 +1,36 @@
+apply plugin: "java"
+apply plugin: "com.github.johnrengelman.shadow"
+
+repositories {
+    mavenCentral()
+}
+
+group = "io.trocco"
+version = "${rootProject.version}"
+description = "A helper library for embulk-output-databricks"
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+configurations {
+    runtimeClasspath {
+        resolutionStrategy.activateDependencyLocking()
+    }
+    shadow {
+        resolutionStrategy.activateDependencyLocking()
+        transitive = false
+    }
+}
+
+dependencies {
+    compile('com.databricks:databricks-jdbc:2.6.38')
+}
+
+shadowJar {
+    // suppress the following undesirable log (https://stackoverflow.com/a/61475766/24393181)
+    //
+    // ERROR StatusLogger Unrecognized format specifier [d]
+    // ERROR StatusLogger Unrecognized conversion specifier [d] starting at position 16 in conversion pattern.
+    // ...
+    exclude "**/Log4j2Plugins.dat"
+}
