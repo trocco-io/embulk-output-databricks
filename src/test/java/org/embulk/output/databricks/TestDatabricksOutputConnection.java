@@ -1,8 +1,13 @@
 package org.embulk.output.databricks;
 
+import static org.embulk.output.databricks.util.ConnectionUtil.*;
+import static org.junit.Assert.assertTrue;
+
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.Executor;
+import org.embulk.output.databricks.util.ConfigUtil;
+import org.embulk.output.databricks.util.ConnectionUtil;
 import org.embulk.output.jdbc.JdbcColumn;
 import org.embulk.output.jdbc.JdbcSchema;
 import org.embulk.output.jdbc.MergeConfig;
@@ -11,21 +16,46 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class TestDatabricksOutputConnection {
+  @Test
+  public void testTableExists() throws SQLException, ClassNotFoundException {
+    ConfigUtil.TestTask t = ConfigUtil.createTestTask();
+    String asciiTableName = t.getTablePrefix() + "_test";
+    String nonAsciiTableName = t.getTablePrefix() + "_テスト";
+    testTableExists(t.getCatalogName(), t.getSchemaName(), asciiTableName);
+    testTableExists(t.getNonAsciiCatalogName(), t.getSchemaName(), asciiTableName);
+    testTableExists(t.getCatalogName(), t.getNonAsciiSchemaName(), asciiTableName);
+    testTableExists(t.getCatalogName(), t.getSchemaName(), nonAsciiTableName);
+    testTableExists(t.getNonAsciiCatalogName(), t.getNonAsciiSchemaName(), nonAsciiTableName);
+  }
+
+  private void testTableExists(String catalogName, String schemaName, String tableName)
+      throws SQLException, ClassNotFoundException {
+    String fullTableName = String.format("`%s`.`%s`.`%s`", catalogName, schemaName, tableName);
+    try (Connection conn = ConnectionUtil.connectByTestTask()) {
+      run(conn, "CREATE TABLE IF NOT EXISTS " + fullTableName);
+      try (DatabricksOutputConnection outputConn =
+          buildOutputConnection(conn, catalogName, schemaName)) {
+        assertTrue(outputConn.tableExists(new TableIdentifier(null, null, tableName)));
+      }
+    } finally {
+      run("DROP TABLE IF EXISTS " + fullTableName);
+    }
+  }
 
   @Test
-  public void TestBuildCopySQL() throws SQLException {
-    try (DatabricksOutputConnection conn = buildOutputConnection()) {
+  public void testBuildCopySQL() throws SQLException {
+    try (DatabricksOutputConnection conn = buildDummyOutputConnection()) {
       TableIdentifier tableIdentifier = new TableIdentifier("database", "schemaName", "tableName");
       String actual = conn.buildCopySQL(tableIdentifier, "filePath", buildJdbcSchema());
       String expected =
-          "COPY INTO `database`.`schemaName`.`tableName` FROM ( SELECT _c0::string col0 , _c1::bigint col1 FROM \"filePath\" ) FILEFORMAT = CSV  FORMAT_OPTIONS ( 'nullValue' = '\\\\N' ,  'delimiter' = '\\t' )";
+          "COPY INTO `database`.`schemaName`.`tableName` FROM ( SELECT _c0::string `あ` , _c1::bigint ```` FROM \"filePath\" ) FILEFORMAT = CSV  FORMAT_OPTIONS ( 'nullValue' = '\\\\N' ,  'delimiter' = '\\t' )";
       Assert.assertEquals(expected, actual);
     }
   }
 
   @Test
-  public void TestBuildAggregateSQL() throws SQLException {
-    try (DatabricksOutputConnection conn = buildOutputConnection()) {
+  public void testBuildAggregateSQL() throws SQLException {
+    try (DatabricksOutputConnection conn = buildDummyOutputConnection()) {
       List<TableIdentifier> fromTableIdentifiers = new ArrayList<>();
       fromTableIdentifiers.add(new TableIdentifier("database", "schemaName", "tableName0"));
       fromTableIdentifiers.add(new TableIdentifier("database", "schemaName", "tableName1"));
@@ -39,28 +69,28 @@ public class TestDatabricksOutputConnection {
   }
 
   @Test
-  public void TestMergeConfigSQLWithMergeRules() throws SQLException {
+  public void testMergeConfigSQLWithMergeRules() throws SQLException {
     List<String> mergeKeys = buildMergeKeys("col0", "col1");
     Optional<List<String>> mergeRules =
         buildMergeRules("col0 = CONCAT(T.col0, 'test')", "col1 = T.col1 + S.col1");
     String actual = mergeConfigSQL(new MergeConfig(mergeKeys, mergeRules));
     String expected =
-        "MERGE INTO `database`.`schemaName`.`tableName100` T  USING `database`.`schemaName`.`tableName9` S  ON (T.`col0` = S.`col0` AND T.`col1` = S.`col1`) WHEN MATCHED THEN  UPDATE SET col0 = CONCAT(T.col0, 'test'), col1 = T.col1 + S.col1 WHEN NOT MATCHED THEN INSERT (`col0`, `col1`) VALUES (S.`col0`, S.`col1`);";
+        "MERGE INTO `database`.`schemaName`.`tableName100` T  USING `database`.`schemaName`.`tableName9` S  ON (T.`col0` = S.`col0` AND T.`col1` = S.`col1`) WHEN MATCHED THEN  UPDATE SET col0 = CONCAT(T.col0, 'test'), col1 = T.col1 + S.col1 WHEN NOT MATCHED THEN INSERT (`あ`, ````) VALUES (S.`あ`, S.````);";
     Assert.assertEquals(expected, actual);
   }
 
   @Test
-  public void TestMergeConfigSQLWithNoMergeRules() throws SQLException {
+  public void testMergeConfigSQLWithNoMergeRules() throws SQLException {
     List<String> mergeKeys = buildMergeKeys("col0", "col1");
     Optional<List<String>> mergeRules = Optional.empty();
     String actual = mergeConfigSQL(new MergeConfig(mergeKeys, mergeRules));
     String expected =
-        "MERGE INTO `database`.`schemaName`.`tableName100` T  USING `database`.`schemaName`.`tableName9` S  ON (T.`col0` = S.`col0` AND T.`col1` = S.`col1`) WHEN MATCHED THEN  UPDATE SET `col0` = S.`col0`, `col1` = S.`col1` WHEN NOT MATCHED THEN INSERT (`col0`, `col1`) VALUES (S.`col0`, S.`col1`);";
+        "MERGE INTO `database`.`schemaName`.`tableName100` T  USING `database`.`schemaName`.`tableName9` S  ON (T.`col0` = S.`col0` AND T.`col1` = S.`col1`) WHEN MATCHED THEN  UPDATE SET `あ` = S.`あ`, ```` = S.```` WHEN NOT MATCHED THEN INSERT (`あ`, ````) VALUES (S.`あ`, S.````);";
     Assert.assertEquals(expected, actual);
   }
 
   private String mergeConfigSQL(MergeConfig mergeConfig) throws SQLException {
-    try (DatabricksOutputConnection conn = buildOutputConnection()) {
+    try (DatabricksOutputConnection conn = buildDummyOutputConnection()) {
       TableIdentifier aggregateToTable =
           new TableIdentifier("database", "schemaName", "tableName9");
       TableIdentifier toTable = new TableIdentifier("database", "schemaName", "tableName100");
@@ -76,15 +106,21 @@ public class TestDatabricksOutputConnection {
     return keys.length > 0 ? Optional.of(Arrays.asList(keys)) : Optional.empty();
   }
 
-  private DatabricksOutputConnection buildOutputConnection() throws SQLException {
+  private DatabricksOutputConnection buildOutputConnection(
+      Connection conn, String catalogName, String schemaName)
+      throws SQLException, ClassNotFoundException {
+    return new DatabricksOutputConnection(conn, catalogName, schemaName);
+  }
+
+  private DatabricksOutputConnection buildDummyOutputConnection() throws SQLException {
     return new DatabricksOutputConnection(
         buildDummyConnection(), "defaultCatalogName", "defaultSchemaName");
   }
 
   private JdbcSchema buildJdbcSchema() {
     List<JdbcColumn> jdbcColumns = new ArrayList<>();
-    jdbcColumns.add(JdbcColumn.newTypeDeclaredColumn("col0", Types.VARCHAR, "string", true, false));
-    jdbcColumns.add(JdbcColumn.newTypeDeclaredColumn("col1", Types.BIGINT, "bigint", true, false));
+    jdbcColumns.add(JdbcColumn.newTypeDeclaredColumn("あ", Types.VARCHAR, "string", true, false));
+    jdbcColumns.add(JdbcColumn.newTypeDeclaredColumn("`", Types.BIGINT, "bigint", true, false));
     return new JdbcSchema(jdbcColumns);
   }
 

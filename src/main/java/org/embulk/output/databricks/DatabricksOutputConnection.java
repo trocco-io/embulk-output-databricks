@@ -107,7 +107,8 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
       if (i != 0) {
         sb.append(" , ");
       }
-      sb.append(String.format("_c%d::%s %s", i, getCreateTableTypeName(column), column.getName()));
+      String quotedColumnName = quoteIdentifierString(column.getName());
+      sb.append(String.format("_c%d::%s %s", i, getCreateTableTypeName(column), quotedColumnName));
     }
     sb.append(" FROM ");
     sb.append(quoteIdentifierString(filePath, "\""));
@@ -118,6 +119,15 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
     sb.append(" 'delimiter' = '\\t' ");
     sb.append(")");
     return sb.toString();
+  }
+
+  @Override
+  protected String quoteIdentifierString(String str, String quoteString) {
+    // https://docs.databricks.com/en/sql/language-manual/sql-ref-identifiers.html
+    if (quoteString.equals("`")) {
+      return quoteString + str.replaceAll(quoteString, quoteString + quoteString) + quoteString;
+    }
+    return super.quoteIdentifierString(str, quoteString);
   }
 
   // This is almost a copy of JdbcOutputConnection except for aggregating fromTables to first from
