@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 import org.embulk.config.ConfigDiff;
+import org.embulk.config.ConfigException;
 import org.embulk.config.ConfigSource;
 import org.embulk.output.databricks.DatabricksAPIClient;
 import org.embulk.output.databricks.DatabricksCopyBatchInsert;
@@ -31,8 +32,21 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     @Config("http_path")
     public String getHTTPPath();
 
+    @Config("auth_type")
+    @ConfigDefault("\"pat\"") // oauth-m2m or pat
+    public String getAuthType();
+
     @Config("personal_access_token")
-    public String getPersonalAccessToken();
+    @ConfigDefault("null")
+    public Optional<String> getPersonalAccessToken();
+
+    @Config("oauth2_client_id")
+    @ConfigDefault("null")
+    public Optional<String> getOauth2ClientId();
+
+    @Config("oauth2_client_secret")
+    @ConfigDefault("null")
+    public Optional<String> getOauth2ClientSecret();
 
     @Config("catalog_name")
     public String getCatalogName();
@@ -65,6 +79,25 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
       @ConfigDefault("\"0.0.0\"")
       public String getProductVersion();
     }
+
+    static String fetchPersonalAccessToken(DatabricksPluginTask t) {
+      return validatePresence(t.getPersonalAccessToken(), "personal_access_token");
+    }
+
+    static String fetchOauth2ClientId(DatabricksPluginTask t) {
+      return validatePresence(t.getOauth2ClientId(), "oauth2_client_id");
+    }
+
+    static String fetchOauth2ClientSecret(DatabricksPluginTask t) {
+      return validatePresence(t.getOauth2ClientSecret(), "oauth2_client_secret");
+    }
+  }
+
+  static <T> T validatePresence(Optional<T> val, String varName) {
+    if (val.isPresent()) {
+      return val.get();
+    }
+    throw new ConfigException(String.format("%s must not be null.", varName));
   }
 
   @Override
@@ -98,9 +131,22 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     String url = String.format("jdbc:databricks://%s:443", t.getServerHostname());
     Properties props = new java.util.Properties();
     props.put("httpPath", t.getHTTPPath());
-    props.put("AuthMech", "3");
-    props.put("UID", "token");
-    props.put("PWD", t.getPersonalAccessToken());
+    String authType = t.getAuthType();
+    switch (authType) {
+      case "pat":
+        props.put("AuthMech", "3");
+        props.put("UID", "token");
+        props.put("PWD", DatabricksPluginTask.fetchPersonalAccessToken(t));
+        break;
+      case "oauth-m2m":
+        props.put("AuthMech", "11");
+        props.put("Auth_Flow", "1");
+        props.put("OAuth2ClientId", DatabricksPluginTask.fetchOauth2ClientId(t));
+        props.put("OAuth2Secret", DatabricksPluginTask.fetchOauth2ClientSecret(t));
+        break;
+      default:
+        throw new ConfigException(String.format("unknown auth_type '%s'", authType));
+    }
     props.put("SSL", "1");
     props.put("ConnCatalog", t.getCatalogName());
     props.put("ConnSchema", t.getSchemaName());
@@ -160,10 +206,11 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
 
   @Override
   protected void logConnectionProperties(String url, Properties props) {
+    List<String> maskedKeys = Arrays.asList("PWD", "OAuth2Secret");
     Properties maskedProps = new Properties();
     for (Object keyObj : props.keySet()) {
       String key = (String) keyObj;
-      String maskedVal = key.equals("PWD") ? "***" : props.getProperty(key);
+      String maskedVal = maskedKeys.contains(key) ? "***" : props.getProperty(key);
       maskedProps.setProperty(key, maskedVal);
     }
     super.logConnectionProperties(url, maskedProps);
