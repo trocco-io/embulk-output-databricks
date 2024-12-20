@@ -8,8 +8,16 @@ import java.util.List;
 
 public class DatabricksApiClientUtil {
   public static void deleteAllTemporaryStagingVolumes() {
+    ConfigUtil.TestTask t = ConfigUtil.createTestTask();
+    deleteAllTemporaryStagingVolumes(t.getCatalogName(), t.getSchemaName());
+    deleteAllTemporaryStagingVolumes(t.getCatalogName(), t.getNonAsciiSchemaName());
+    deleteAllTemporaryStagingVolumes(t.getNonAsciiCatalogName(), t.getSchemaName());
+    deleteAllTemporaryStagingVolumes(t.getNonAsciiCatalogName(), t.getNonAsciiSchemaName());
+  }
+
+  public static void deleteAllTemporaryStagingVolumes(String catalogName, String schemaName) {
     WorkspaceClient client = createWorkspaceClient();
-    fetchAllTemporaryStagingVolumes()
+    fetchAllTemporaryStagingVolumes(catalogName, schemaName)
         .forEach(
             x -> {
               String name =
@@ -20,11 +28,17 @@ public class DatabricksApiClientUtil {
 
   public static List<VolumeInfo> fetchAllTemporaryStagingVolumes() {
     ConfigUtil.TestTask t = ConfigUtil.createTestTask();
+    return fetchAllTemporaryStagingVolumes(t.getCatalogName(), t.getSchemaName());
+  }
+
+  private static List<VolumeInfo> fetchAllTemporaryStagingVolumes(
+      String catalogName, String schemaName) {
+    ConfigUtil.TestTask t = ConfigUtil.createTestTask();
     WorkspaceClient client = createWorkspaceClient();
     List<VolumeInfo> results = new ArrayList<>();
     client
         .volumes()
-        .list(t.getCatalogName(), t.getSchemaName())
+        .list(catalogName, schemaName)
         .forEach(
             x -> {
               if (x.getName().startsWith(t.getStagingVolumeNamePrefix())) {
