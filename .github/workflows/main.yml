@@ -36,13 +36,15 @@ jobs:
       - name: Write test secret to file
         run: envsubst < ci/config_template.yml > test-config.yml
         env:
-          SERVER_HOSTNAME: ${{ secrets.TEST_SERVER_HOSTNAME }}
-          HTTP_PATH: ${{ secrets.TEST_HTTP_PATH }}
+          SERVER_HOSTNAME: ${{ vars.TEST_SERVER_HOSTNAME }}
+          HTTP_PATH: ${{ vars.TEST_HTTP_PATH }}
           PERSONAL_ACCESS_TOKEN: ${{ secrets.TEST_PERSONAL_ACCESS_TOKEN }}
-          CATALOG_NAME: ${{ secrets.TEST_CATALOG_NAME }}
-          SCHEMA_NAME: ${{ secrets.TEST_SCHEMA_NAME }}
-          TABLE_PREFIX: ${{ secrets.TEST_TABLE_PREFIX }}
-          STAGING_VOLUME_NAME_PREFIX: ${{ secrets.TEST_STAGING_VOLUME_NAME_PREFIX }}
+          CATALOG_NAME: ${{ vars.TEST_CATALOG_NAME }}
+          SCHEMA_NAME: ${{ vars.TEST_SCHEMA_NAME }}
+          TABLE_PREFIX: ${{ vars.TEST_TABLE_PREFIX }}
+          NON_ASCII_CATALOG_NAME: ${{ vars.TEST_NON_ASCII_CATALOG_NAME }}
+          NON_ASCII_SCHEMA_NAME: ${{ vars.TEST_NON_ASCII_SCHEMA_NAME }}
+          STAGING_VOLUME_NAME_PREFIX: ${{ vars.TEST_STAGING_VOLUME_NAME_PREFIX }}
       - run: ./gradlew test
         env:
           EMBULK_OUTPUT_DATABRICKS_TEST_CONFIG: "./test-config.yml"
