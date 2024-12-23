@@ -3,6 +3,8 @@
 server_hostname: 
 http_path: 
 personal_access_token: 
+oauth2_client_id: 
+oauth2_client_secret: 
 catalog_name: 
 schema_name: 
 non_ascii_schema_name:

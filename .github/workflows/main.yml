@@ -43,6 +43,8 @@ jobs:
           SCHEMA_NAME: ${{ secrets.TEST_SCHEMA_NAME }}
           TABLE_PREFIX: ${{ secrets.TEST_TABLE_PREFIX }}
           STAGING_VOLUME_NAME_PREFIX: ${{ secrets.TEST_STAGING_VOLUME_NAME_PREFIX }}
+          OAUTH2_CLIENT_ID: ${{ vars.TEST_OAUTH2_CLIENT_ID }}
+          OAUTH2_CLIENT_SECRET: ${{ secrets.TEST_OAUTH2_CLIENT_SECRET }}
       - run: ./gradlew test
         env:
           EMBULK_OUTPUT_DATABRICKS_TEST_CONFIG: "./test-config.yml"
