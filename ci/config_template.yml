@@ -1,6 +1,8 @@
 server_hostname: "$SERVER_HOSTNAME"
 http_path: "$HTTP_PATH"
 personal_access_token: "$PERSONAL_ACCESS_TOKEN"
+oauth2_client_id: "$OAUTH2_CLIENT_ID"
+oauth2_client_secret: "$OAUTH2_CLIENT_SECRET"
 catalog_name: "$CATALOG_NAME"
 schema_name: "$SCHEMA_NAME"
 table_prefix: "$TABLE_PREFIX"
