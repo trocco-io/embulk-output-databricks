@@ -1,0 +1,7 @@
+server_hostname: "$SERVER_HOSTNAME"
+http_path: "$HTTP_PATH"
+personal_access_token: "$PERSONAL_ACCESS_TOKEN"
+catalog_name: "$CATALOG_NAME"
+schema_name: "$SCHEMA_NAME"
+table_prefix: "$TABLE_PREFIX"
+staging_volume_name_prefix: "$STAGING_VOLUME_NAME_PREFIX"

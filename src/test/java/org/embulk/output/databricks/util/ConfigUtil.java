@@ -60,6 +60,12 @@ public class ConfigUtil {
 
     @Config("staging_volume_name_prefix")
     public String getStagingVolumeNamePrefix();
+
+    @Config("non_ascii_catalog_name")
+    public String getNonAsciiCatalogName();
+
+    @Config("non_ascii_schema_name")
+    public String getNonAsciiSchemaName();
   }
 
   public static TestTask createTestTask() {
@@ -96,6 +102,31 @@ public class ConfigUtil {
   public static DatabricksOutputPlugin.DatabricksPluginTask createPluginTask(
       ConfigSource configSource) {
     return CONFIG_MAPPER.map(configSource, DatabricksOutputPlugin.DatabricksPluginTask.class);
+  }
+
+  public static ConfigSource setNonAsciiCatalogName(ConfigSource configSource) {
+    return configSource.set("catalog_name", createTestTask().getNonAsciiCatalogName());
+  }
+
+  public static ConfigSource setNonAsciiSchemaName(ConfigSource configSource) {
+    return configSource.set("schema_name", createTestTask().getNonAsciiSchemaName());
+  }
+
+  public static ConfigSource setNonAsciiTable(ConfigSource configSource) {
+    return configSource.set("table", createTestTask().getTablePrefix() + "_マルチバイトテスト");
+  }
+
+  public static ConfigSource setNonAsciiStagingVolumeNamePrefix(ConfigSource configSource) {
+    String s = createTestTask().getStagingVolumeNamePrefix() + "_マルチバイトテスト";
+    return configSource.set("staging_volume_name_prefix", s);
+  }
+
+  public static ConfigSource setMergeKeys(ConfigSource configSource, String... mergeKeys) {
+    return configSource.set("merge_keys", mergeKeys);
+  }
+
+  public static ConfigSource setMergeRule(ConfigSource configSource, String... mergeRule) {
+    return configSource.set("merge_rule", mergeRule);
   }
 
   public static ConfigSource setColumnOption(
