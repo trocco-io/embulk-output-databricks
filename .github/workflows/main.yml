@@ -19,6 +19,9 @@ jobs:
   test:
     name: test
     runs-on: ubuntu-latest
+    concurrency:
+      group: test-group
+      cancel-in-progress: false
     if: >
       ${{
         github.event_name == 'pull_request' ||
