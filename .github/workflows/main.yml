@@ -48,6 +48,8 @@ jobs:
           NON_ASCII_CATALOG_NAME: ${{ vars.TEST_NON_ASCII_CATALOG_NAME }}
           NON_ASCII_SCHEMA_NAME: ${{ vars.TEST_NON_ASCII_SCHEMA_NAME }}
           STAGING_VOLUME_NAME_PREFIX: ${{ vars.TEST_STAGING_VOLUME_NAME_PREFIX }}
+          OAUTH2_CLIENT_ID: ${{ vars.TEST_OAUTH2_CLIENT_ID }}
+          OAUTH2_CLIENT_SECRET: ${{ secrets.TEST_OAUTH2_CLIENT_SECRET }}
       - run: ./gradlew test
         env:
           EMBULK_OUTPUT_DATABRICKS_TEST_CONFIG: "./test-config.yml"

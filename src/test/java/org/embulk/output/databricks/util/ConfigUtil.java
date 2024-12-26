@@ -43,6 +43,12 @@ public class ConfigUtil {
     @Config("personal_access_token")
     public String getPersonalAccessToken();
 
+    @Config("oauth2_client_id")
+    public String getOauth2ClientId();
+
+    @Config("oauth2_client_secret")
+    public String getOauth2ClientSecret();
+
     @Config("catalog_name")
     public String getCatalogName();
 
@@ -66,6 +72,10 @@ public class ConfigUtil {
     return CONFIG_MAPPER.map(baseConfigSource(), TestTask.class);
   }
 
+  public static ConfigSource createEmptyConfigSource() {
+    return CONFIG_MAPPER_FACTORY.newConfigSource();
+  }
+
   public static ConfigSource createPluginConfigSource(AbstractJdbcOutputPlugin.Mode mode) {
     return createPluginConfigSource(mode, null);
   }
@@ -74,8 +84,7 @@ public class ConfigUtil {
       AbstractJdbcOutputPlugin.Mode mode, List<String> mergeKeys) {
     final TestTask t = createTestTask();
 
-    return CONFIG_MAPPER_FACTORY
-        .newConfigSource()
+    return createEmptyConfigSource()
         .set("type", "databricks")
         .set("server_hostname", t.getServerHostname())
         .set("http_path", t.getHTTPPath())
