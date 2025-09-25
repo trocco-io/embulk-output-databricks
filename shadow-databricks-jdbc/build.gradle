@@ -23,7 +23,7 @@ configurations {
 }
 
 dependencies {
-    compile('com.databricks:databricks-jdbc:2.6.38')
+    compile('com.databricks:databricks-jdbc:2.6.40')
 }
 
 shadowJar {
