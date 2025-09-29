@@ -51,8 +51,6 @@ jobs:
           OAUTH2_CLIENT_ID: ${{ vars.TEST_OAUTH2_CLIENT_ID }}
           OAUTH2_CLIENT_SECRET: ${{ secrets.TEST_OAUTH2_CLIENT_SECRET }}
       - run: ./gradlew test
-        env:
-          EMBULK_OUTPUT_DATABRICKS_TEST_CONFIG: "./test-config.yml"
   build:
     name: Build + Publish
     runs-on: ubuntu-latest
