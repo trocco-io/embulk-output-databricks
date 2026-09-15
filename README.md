@@ -29,6 +29,7 @@ Databricks output plugin for Embulk loads records to Databricks Delta Table.
 - **staging_volume_name_prefix**: temporarily created managed volume prefix (string, default: "embulk_output_databricks_")
 - **delete_stage**: whether to delete a temporarily created managed volume after running embulk. (boolean, default: false)
 - **delete_stage_on_error**: if delete_stage_on_error is false and delete_stage is true, do not delete temporarily created volumes in case of error. (boolean, default: false)
+- **escape_with_enclosing**: enclose string values in double quotes in the staged file instead of escaping them with backslashes. See [escape_with_enclosing](#escape_with_enclosing) below. (boolean, default: false)
 - **retry_limit**: max retry count for database operations (integer, default: 12). When intermediate table to create already created by another process, this plugin will retry with another table name to avoid collision.
 - **retry_wait**: initial retry wait time in milliseconds (integer, default: 1000 (1 second))
 - **max_retry_wait**: upper limit of retry wait, which will be doubled at every retry (integer, default: 1800000 (30 minutes))
@@ -74,6 +75,35 @@ This plugin does not support TIMESTAMP_NTZ、INTERVAL types, if target tables co
 （Because The official Databricks JDBC driver does not support [TIMESTAMP_NTZ](https://docs.databricks.com/en/sql/language-manual/data-types/timestamp-ntz-type.html#notes)、[INTERVAL](https://docs.databricks.com/en/sql/language-manual/data-types/interval-type.html) types].）
 
 This plugin converts empty string input to null output. If you want to empty string output, you can use continuous double quote string ("").
+
+### escape_with_enclosing
+
+By default, string values are written to the staged file as backslash-escaped, unenclosed
+PostgreSQL COPY TEXT fields, while `COPY INTO ... FILEFORMAT = CSV` reads that file with Spark's
+CSV reader, whose quote character (`"`) is enabled by default. The two formats disagree, which
+corrupts values that contain a double quote, a backslash or a line break:
+
+| input value | loaded as (default) |
+|---|---|
+| `"quoted"` followed by a line break | the delimiter is swallowed and the following columns are shifted into this one |
+| `line1`, line break, `line2` | `line1\nline2` (a literal backslash and `n`) |
+| `path\to\file` | `path\\to\\file` |
+| `""` | an empty string |
+
+Setting `escape_with_enclosing` to `true` writes string values as RFC 4180 enclosed fields — the
+value is wrapped in double quotes, an inner double quote is doubled (`""`), and everything else
+(including line breaks and backslashes) is kept as-is — and adds the matching reader options to
+`COPY INTO` (`quote`, `escape`, `multiLine` and `lineSep`). All of the cases above then round-trip
+unchanged.
+
+Two things to be aware of before enabling it:
+
+- `multiLine` stops the reader from splitting a staged file across tasks, so a single `COPY INTO`
+  loses some parallelism.
+- NULL is still written as an unenclosed `\N` to match the `nullValue` format option, and Spark
+  compares that option against the value *after* the enclosing quotes are removed. A string value
+  that is exactly `\N` is therefore loaded as NULL. (With the default behavior the same value is
+  loaded as `\\N`, so it is corrupted either way.)
 
 ## Build
 
