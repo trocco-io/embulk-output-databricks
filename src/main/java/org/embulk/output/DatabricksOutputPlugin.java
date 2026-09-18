@@ -66,6 +66,10 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
     @ConfigDefault("false")
     public boolean getDeleteStageOnError();
 
+    @Config("escape_with_enclosing")
+    @ConfigDefault("false")
+    public boolean getEscapeWithEnclosing();
+
     @Config("user_agent")
     @ConfigDefault("{}")
     public UserAgentEntry getUserAgentEntry();
@@ -201,7 +205,8 @@ public class DatabricksOutputPlugin extends AbstractJdbcOutputPlugin {
         t.getSchemaName(),
         DatabricksAPIClient.fetchCurrentTransactionVolumeName(t.getStagingVolumeNamePrefix()),
         t.getDeleteStage(),
-        t.getDeleteStageOnError());
+        t.getDeleteStageOnError(),
+        t.getEscapeWithEnclosing());
   }
 
   @Override

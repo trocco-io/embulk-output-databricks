@@ -46,9 +46,20 @@ public class TestDatabricksOutputConnection {
   public void testBuildCopySQL() throws SQLException {
     try (DatabricksOutputConnection conn = buildDummyOutputConnection()) {
       TableIdentifier tableIdentifier = new TableIdentifier("database", "schemaName", "tableName");
-      String actual = conn.buildCopySQL(tableIdentifier, "filePath", buildJdbcSchema());
+      String actual = conn.buildCopySQL(tableIdentifier, "filePath", buildJdbcSchema(), false);
       String expected =
           "COPY INTO `database`.`schemaName`.`tableName` FROM ( SELECT _c0::string `あ` , _c1::bigint ```` FROM \"filePath\" ) FILEFORMAT = CSV  FORMAT_OPTIONS ( 'nullValue' = '\\\\N' ,  'delimiter' = '\\t' )";
+      Assert.assertEquals(expected, actual);
+    }
+  }
+
+  @Test
+  public void testBuildCopySQLWithEscapeWithEnclosing() throws SQLException {
+    try (DatabricksOutputConnection conn = buildDummyOutputConnection()) {
+      TableIdentifier tableIdentifier = new TableIdentifier("database", "schemaName", "tableName");
+      String actual = conn.buildCopySQL(tableIdentifier, "filePath", buildJdbcSchema(), true);
+      String expected =
+          "COPY INTO `database`.`schemaName`.`tableName` FROM ( SELECT _c0::string `あ` , _c1::bigint ```` FROM \"filePath\" ) FILEFORMAT = CSV  FORMAT_OPTIONS ( 'nullValue' = '\\\\N' ,  'delimiter' = '\\t'  , 'quote' = '\"'  , 'escape' = '\"'  , 'multiLine' = 'true'  , 'lineSep' = '\\n' )";
       Assert.assertEquals(expected, actual);
     }
   }

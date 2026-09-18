@@ -25,6 +25,7 @@ public class DatabricksCopyBatchInsert extends AbstractPostgreSQLCopyBatchInsert
   private final String volumeName;
   private final boolean deleteStage;
   private final boolean deleteStageOnError;
+  private final boolean escapeWithEnclosing;
   private DatabricksOutputConnection connection = null;
   private final List<Future<Void>> uploadAndCopyFutures;
   private long totalRows;
@@ -38,7 +39,8 @@ public class DatabricksCopyBatchInsert extends AbstractPostgreSQLCopyBatchInsert
       String schemaName,
       String volumeName,
       boolean deleteStage,
-      boolean deleteStageOnError)
+      boolean deleteStageOnError,
+      boolean escapeWithEnclosing)
       throws IOException {
     this.connector = connector;
     this.targetTableSchema = targetTableSchema;
@@ -51,6 +53,75 @@ public class DatabricksCopyBatchInsert extends AbstractPostgreSQLCopyBatchInsert
     this.uploadAndCopyFutures = new ArrayList<>();
     this.deleteStage = deleteStage;
     this.deleteStageOnError = deleteStageOnError;
+    this.escapeWithEnclosing = escapeWithEnclosing;
+  }
+
+  // AbstractPostgreSQLCopyBatchInsert#appendDelimiter is private, so it is reimplemented here.
+  private void appendEnclosedDelimiter() throws IOException {
+    if (index != 0) {
+      writer.write(delimiterString);
+    }
+    index++;
+  }
+
+  // Enclose field with double quotes. Inside the quotes:
+  // - " is escaped as "" (CSV standard)
+  // - \0 (null byte) is removed
+  // - All other characters (\n, \t, \r, \\) are written as-is
+  private void setEnclosedString(String v) throws IOException {
+    writer.write('"');
+    int len = v.length();
+    for (int i = 0; i < len; i++) {
+      char c = v.charAt(i);
+      if (c == '"') {
+        writer.write("\"\"");
+      } else if (c != 0) {
+        writer.write(c);
+      }
+    }
+    writer.write('"');
+  }
+
+  // AbstractPostgreSQLCopyBatchInsert writes string values as backslash-escaped, unenclosed
+  // PostgreSQL COPY TEXT fields, but Databricks reads the staged file with Spark's CSV reader,
+  // whose quote character is enabled by default. A value such as "foo" is therefore re-interpreted
+  // as an enclosed field on read and can swallow the following delimiter, shifting every later
+  // column. When escapeWithEnclosing is set, string values are written as RFC 4180 enclosed fields
+  // instead, and DatabricksOutputConnection#buildCopySQL configures the reader to match.
+  @Override
+  public void setString(String v) throws IOException {
+    if (!escapeWithEnclosing) {
+      super.setString(v);
+      return;
+    }
+    appendEnclosedDelimiter();
+    setEnclosedString(v);
+  }
+
+  @Override
+  public void setNString(String v) throws IOException {
+    if (!escapeWithEnclosing) {
+      super.setNString(v);
+      return;
+    }
+    appendEnclosedDelimiter();
+    setEnclosedString(v);
+  }
+
+  // String.valueOf(byte[]) resolves to String.valueOf(Object), so this stages the array's identity
+  // string (for example "[B@6d06d69c") rather than the decoded bytes. That is intentional here: it
+  // is what AbstractPostgreSQLCopyBatchInsert#setBytes already does, so the option only changes how
+  // a value is escaped and never what the value is. Decoding the bytes would be a separate fix and
+  // belongs in the parent class, otherwise a binary column would load differently depending on
+  // whether escape_with_enclosing happens to be on.
+  @Override
+  public void setBytes(byte[] v) throws IOException {
+    if (!escapeWithEnclosing) {
+      super.setBytes(v);
+      return;
+    }
+    appendEnclosedDelimiter();
+    setEnclosedString(String.valueOf(v));
   }
 
   @Override
@@ -166,7 +237,7 @@ public class DatabricksCopyBatchInsert extends AbstractPostgreSQLCopyBatchInsert
         try (DatabricksOutputConnection con =
             (DatabricksOutputConnection) connector.connect(true)) {
           long startTime = System.currentTimeMillis();
-          con.runCopy(tableIdentifier, filePath, targetTableSchema);
+          con.runCopy(tableIdentifier, filePath, targetTableSchema, escapeWithEnclosing);
           double seconds = (System.currentTimeMillis() - startTime) / 1000.0;
           logger.info(String.format("Loaded file %s (%.2f seconds for COPY)", filePath, seconds));
           if (deleteStage) {

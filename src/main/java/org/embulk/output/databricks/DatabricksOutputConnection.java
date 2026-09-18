@@ -82,10 +82,11 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
     }
   }
 
-  public void runCopy(TableIdentifier table, String filePath, JdbcSchema jdbcSchema)
+  public void runCopy(
+      TableIdentifier table, String filePath, JdbcSchema jdbcSchema, boolean escapeWithEnclosing)
       throws SQLException {
     try (Statement stmt = connection.createStatement()) {
-      String sql = buildCopySQL(table, filePath, jdbcSchema);
+      String sql = buildCopySQL(table, filePath, jdbcSchema, escapeWithEnclosing);
       executeUpdate(stmt, sql);
       commitIfNecessary(connection);
     }
@@ -93,7 +94,8 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
 
   // https://docs.databricks.com/en/ingestion/copy-into/examples.html#load-csv-files-with-copy-into
   // https://docs.databricks.com/en/sql/language-manual/delta-copy-into.html
-  protected String buildCopySQL(TableIdentifier table, String filePath, JdbcSchema jdbcSchema) {
+  protected String buildCopySQL(
+      TableIdentifier table, String filePath, JdbcSchema jdbcSchema, boolean escapeWithEnclosing) {
     StringBuilder sb = new StringBuilder();
     sb.append("COPY INTO ");
     quoteTableIdentifier(sb, table);
@@ -117,6 +119,22 @@ public class DatabricksOutputConnection extends JdbcOutputConnection {
     sb.append(" FORMAT_OPTIONS (");
     sb.append(" 'nullValue' = '\\\\N' , ");
     sb.append(" 'delimiter' = '\\t' ");
+    if (escapeWithEnclosing) {
+      // String values are enclosed in double quotes by DatabricksCopyBatchInsert, with an inner
+      // double quote doubled ("") as in RFC 4180. The reader must be told to use the same
+      // convention: Spark's CSV reader defaults 'escape' to a backslash, which would otherwise
+      // swallow backslashes inside enclosed values.
+      // https://spark.apache.org/docs/latest/sql-data-sources-csv.html
+      sb.append(" , 'quote' = '\"' ");
+      sb.append(" , 'escape' = '\"' ");
+      // Enclosed values may contain raw line breaks. Spark's CSV reader splits records by line
+      // unless multiLine is enabled, which would break such records apart.
+      sb.append(" , 'multiLine' = 'true' ");
+      // Pin the record separator to the one DatabricksCopyBatchInsert writes. Leaving it unset
+      // makes the reader auto-detect among \r, \r\n and \n, which would let a bare \r inside an
+      // enclosed value be treated as a record separator and normalized away.
+      sb.append(" , 'lineSep' = '\\n' ");
+    }
     sb.append(")");
     return sb.toString();
   }
