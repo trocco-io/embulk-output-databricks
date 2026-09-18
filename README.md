@@ -74,7 +74,7 @@ Databricks output plugin for Embulk loads records to Databricks Delta Table.
 This plugin does not support TIMESTAMP_NTZ、INTERVAL types, if target tables contain these types, embulk will raise a runtime error.
 （Because The official Databricks JDBC driver does not support [TIMESTAMP_NTZ](https://docs.databricks.com/en/sql/language-manual/data-types/timestamp-ntz-type.html#notes)、[INTERVAL](https://docs.databricks.com/en/sql/language-manual/data-types/interval-type.html) types].）
 
-This plugin converts empty string input to null output. If you want to empty string output, you can use continuous double quote string ("").
+This plugin converts empty string input to null output. If you want to empty string output, you can use continuous double quote string (""). Note that [`escape_with_enclosing`](#escape_with_enclosing) changes this: with that option enabled an empty string is loaded as an empty string.
 
 ### escape_with_enclosing
 
@@ -96,7 +96,7 @@ value is wrapped in double quotes, an inner double quote is doubled (`""`), and 
 `COPY INTO` (`quote`, `escape`, `multiLine` and `lineSep`). All of the cases above then round-trip
 unchanged.
 
-Two things to be aware of before enabling it:
+Three things to be aware of before enabling it:
 
 - `multiLine` stops the reader from splitting a staged file across tasks, so a single `COPY INTO`
   loses some parallelism.
@@ -104,6 +104,11 @@ Two things to be aware of before enabling it:
   compares that option against the value *after* the enclosing quotes are removed. A string value
   that is exactly `\N` is therefore loaded as NULL. (With the default behavior the same value is
   loaded as `\\N`, so it is corrupted either way.)
+- **An empty string is no longer converted to NULL.** Every string is enclosed, so an empty string
+  reaches the reader as `""` and Spark keeps it as an empty string. This overrides the behavior
+  described in the note above ("converts empty string input to null output"): with this option
+  enabled, an empty string stays an empty string and only a NULL input becomes NULL. If you rely on
+  empty input arriving as NULL, keep the option off or map the value before the transfer.
 
 ## Build
 

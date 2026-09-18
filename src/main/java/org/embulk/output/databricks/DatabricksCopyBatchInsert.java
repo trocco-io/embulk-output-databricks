@@ -108,6 +108,12 @@ public class DatabricksCopyBatchInsert extends AbstractPostgreSQLCopyBatchInsert
     setEnclosedString(v);
   }
 
+  // String.valueOf(byte[]) resolves to String.valueOf(Object), so this stages the array's identity
+  // string (for example "[B@6d06d69c") rather than the decoded bytes. That is intentional here: it
+  // is what AbstractPostgreSQLCopyBatchInsert#setBytes already does, so the option only changes how
+  // a value is escaped and never what the value is. Decoding the bytes would be a separate fix and
+  // belongs in the parent class, otherwise a binary column would load differently depending on
+  // whether escape_with_enclosing happens to be on.
   @Override
   public void setBytes(byte[] v) throws IOException {
     if (!escapeWithEnclosing) {
